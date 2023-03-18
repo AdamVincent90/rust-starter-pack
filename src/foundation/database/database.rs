@@ -10,7 +10,7 @@ pub struct Config {
     pub max_connections: u32,
 }
 
-pub async fn new_postgres_database(config: Config) -> Result<postgres::PgPool, sqlx::Error> {
+pub async fn open_postgres_database(config: Config) -> Result<postgres::PgPool, sqlx::Error> {
     let connection_url = format!(
         "postgres://{}:{}@{}/{}",
         config.db_username, config.db_password, config.db_host, config.db_schema

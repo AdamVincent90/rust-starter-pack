@@ -29,7 +29,7 @@ async fn main() {
         max_connections: 10,
     };
 
-    let db = foundation::database::database::new_postgres_database(database_confing)
+    let db = foundation::database::database::open_postgres_database(database_confing)
         .await
         .unwrap_or_else(|err| {
             log.error_w(
