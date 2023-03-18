@@ -1,0 +1,29 @@
+# Compiled files
+target/
+
+# Dependency directories
+Cargo.lock
+vendor/
+
+# IDE/editor-specific files
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+*.bak
+*.swp
+
+# Generated files
+*.rs.bk
+*.rs.bk.*
+
+# Miscellaneous
+*.log
+*.pid
+*.err
+*.out
+*.db
+*.sqlite
+*.sqlite3
+*.DS_Store
