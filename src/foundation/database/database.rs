@@ -28,7 +28,7 @@ pub async fn open_postgres_database(config: Config) -> Result<postgres::PgPool, 
 
     let postgres_db = match postgres::PgPoolOptions::new()
         .max_connections(config.max_connections)
-        .acquire_timeout(Duration::from_secs(10))
+        .acquire_timeout(Duration::from_secs(5))
         .connect_with(connection_options)
         .await
     {

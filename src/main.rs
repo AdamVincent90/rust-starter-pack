@@ -21,7 +21,7 @@ async fn main() {
 
     // ---------------------------------------
     // custom postgres configuration support.
-    let database_confing = foundation::database::database::Config {
+    let database_config = foundation::database::database::Config {
         db_host: String::from("localhost"),
         db_port: 5434,
         db_username: String::from("postgres"),
@@ -31,7 +31,7 @@ async fn main() {
         enable_ssl: sqlx::postgres::PgSslMode::Disable,
     };
 
-    let db = foundation::database::database::open_postgres_database(database_confing)
+    let db = foundation::database::database::open_postgres_database(database_config)
         .await
         .unwrap_or_else(|err| {
             log.error_w(
@@ -41,17 +41,38 @@ async fn main() {
             std::process::exit(0)
         });
 
+    log.info_w("database loaded", Some(()));
+
+    // ---------------------------------------
+    // custom web server configuration support.
+
+    let web_config = foundation::server::server::Config {
+        web_address: String::from("localhost"),
+        port: 6874,
+    };
+
+    let server = foundation::server::server::new_actix_server(web_config)
+        .await
+        .unwrap_or_else(|err| {
+            log.error_w("establishing web server", Some(err.to_string()));
+            std::process::exit(0)
+        });
+
+    log.info_w("server loaded", Some(()));
+
+    server.resume().await;
+
+    // Add some shutdown logic using channels
+
     // This is just a test to simulate a ping to the database.
     loop {
         thread::sleep(Duration::from_secs(5));
         foundation::database::database::ping_connection(&db, &log, 5)
             .await
             .unwrap_or_else(|err| log.error_w("status check failed", Some(err)));
+
+        foundation::server::server::ping_axtix_server(&log, 5)
+            .await
+            .unwrap_or_else(|err| log.error_w("server ping failed", Some(err)));
     }
 }
-
-// Will contain all logic to start up the service.
-fn start_up() {}
-
-// Will contain all the logic to end the service gracefully.
-fn shut_down() {}
