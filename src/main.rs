@@ -22,8 +22,8 @@ async fn main() {
     // ---------------------------------------
     // custom postgres configuration support.
     let database_config = foundation::database::database::Config {
-        db_host: String::from("localhost"),
-        db_port: 5434,
+        db_host: String::from("postgres"),
+        db_port: 5432,
         db_username: String::from("postgres"),
         db_password: String::from("example"),
         db_schema: String::from("postgres"),
@@ -48,7 +48,7 @@ async fn main() {
 
     let web_config = foundation::server::server::Config {
         web_address: String::from("localhost"),
-        port: 6874,
+        port: 80,
     };
 
     let server = foundation::server::server::new_actix_server(web_config)
