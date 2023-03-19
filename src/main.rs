@@ -1,6 +1,6 @@
 pub mod foundation;
 
-use std::env;
+use std::{env, thread, time::Duration};
 
 /// main.rs acts as the startup and shutdown sequence for the main service.
 #[actix_web::main]
@@ -22,11 +22,13 @@ async fn main() {
     // ---------------------------------------
     // custom postgres configuration support.
     let database_confing = foundation::database::database::Config {
-        db_host: String::from("localhost:5434"),
+        db_host: String::from("localhost"),
+        db_port: 5434,
         db_username: String::from("postgres"),
         db_password: String::from("example"),
         db_schema: String::from("postgres"),
         max_connections: 10,
+        enable_ssl: sqlx::postgres::PgSslMode::Disable,
     };
 
     let db = foundation::database::database::open_postgres_database(database_confing)
@@ -39,20 +41,13 @@ async fn main() {
             std::process::exit(0)
         });
 
-    // ---------------------------------------
-    // Query database to check if available (Will be moved)
-    let row: (bool,) = sqlx::query_as("SELECT true")
-        .fetch_one(&db)
-        .await
-        .unwrap_or_else(|err| {
-            log.error_w(
-                "cannot check database connection has loaded",
-                Some(err.to_string()),
-            );
-            std::process::exit(0)
-        });
-
-    println!("{}", row.0);
+    // This is just a test to simulate a ping to the database.
+    loop {
+        thread::sleep(Duration::from_secs(5));
+        foundation::database::database::ping_connection(&db, &log, 5)
+            .await
+            .unwrap_or_else(|err| log.error_w("status check failed", Some(err)));
+    }
 }
 
 // Will contain all logic to start up the service.
