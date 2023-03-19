@@ -5,6 +5,9 @@ target/
 Cargo.lock
 vendor/
 
+# Environment vars
+.env
+
 # IDE/editor-specific files
 .vscode/
 .idea/

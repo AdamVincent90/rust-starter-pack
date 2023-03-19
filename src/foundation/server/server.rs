@@ -34,7 +34,7 @@ pub async fn ping_axtix_server(
     let client = awc::Client::default();
 
     for i in 1..=max_attempts {
-        match client.get("http://localhost:6874").send().await {
+        match client.get("http://localhost:80").send().await {
             Ok(res) => {
                 log.info_w("server successfuly pinged", Some(res));
                 break;
