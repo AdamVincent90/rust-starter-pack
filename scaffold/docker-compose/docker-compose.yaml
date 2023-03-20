@@ -10,7 +10,7 @@ services:
   rust-app:
     build:
       context: ../../
-      dockerfile: scaffold/docker/Dockerfile
+      dockerfile: scaffold/docker/development.dockerfile
     command: sh -c "cargo watch -x run"
     environment:
       - RUST_LOG=debug
@@ -18,3 +18,5 @@ services:
       - 8123:80
     volumes:
       - ../../.:/rust-app
+      - ../../stash/.cargo/registry:/usr/local/cargo/registry
+      - ../../stash/.target:/root/target

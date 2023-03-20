@@ -5,6 +5,8 @@ use sqlx::{
     Connection,
 };
 
+// To clean up and improve.
+
 use crate::foundation::logger::logger;
 
 pub struct Config {
@@ -39,7 +41,7 @@ pub async fn open_postgres_database(config: Config) -> Result<postgres::PgPool, 
     Ok(postgres_db)
 }
 
-pub async fn ping_connection(
+pub async fn ping_postgres_server(
     db: &sqlx::postgres::PgPool,
     log: &logger::Logger,
     max_attempts: u8,

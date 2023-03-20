@@ -2,6 +2,8 @@ use env_logger;
 use log;
 use std::fmt::Debug;
 
+// To clean up and improve.
+
 pub struct Logger {
     name: String,
 }
