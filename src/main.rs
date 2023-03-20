@@ -2,7 +2,7 @@ pub mod foundation;
 
 use std::{io::Error, thread};
 
-use signal_hook::{consts::SIGTERM, iterator::Signals};
+use signal_hook::{consts::SIGINT, iterator::Signals};
 
 /// main.rs acts as the entrypoint for our start up and shutdown for this executable.
 #[actix_web::main]
@@ -24,21 +24,23 @@ async fn main() {
     // our services ready to listen to events. We bubble any errors up during our start up
     // sequence in order for them to be handled for our shutdown function.
     start_up(&log).await.unwrap_or_else(|err| {
-        // We use unwrap or else as we want do not return a result from this function,
-        // thereforece we can use a callack to log the error, and start the shutdown process.
+        // Shut down process to attempt graceful shutdown of our application.
         log.error_w(
             "error during start up sequence, shutting down application gracefully. Error : ",
             Some(err.to_string()),
         );
 
         // Shut down process to attempt graceful shutdown of our application.
+        // We use unwrap or else as we want do not return a result from this function,
+        // therefore we can use a callack to log the error, and start the shutdown process.
         shut_down(&log, err).unwrap_or_else(|err| {
             log.error_w(
                 "error during shutdown process, exiting application. Error : ",
                 Some(err.to_string()),
-            )
+            );
+            std::process::exit(1);
         })
-    })
+    });
 }
 
 // fn start_up() performs all related start up configuration to load our service,
@@ -70,7 +72,7 @@ async fn start_up(
         }
     };
 
-    logger.info_w("database loaded", Some(()));
+    logger.info_w("postgres database loaded", Some(()));
 
     // ---------------------------------------
     // custom actix web server configuration.
@@ -88,25 +90,32 @@ async fn start_up(
         }
     };
 
-    logger.info_w("server loaded", Some(()));
+    logger.info_w("actix server loaded", Some(()));
 
-    // Create a signal that listens to SIGTERM events.
-    let mut signals = Signals::new(&[SIGTERM])?;
+    // Create a signal that listens to SIGINT events.
+    let mut signals = Signals::new(&[SIGINT])?;
+    let signal_handle = signals.handle();
 
     // We spawn a thread and passes in any mutable values defined.
-    // This needs to be improved.
+    // This needs to be improved. Will need to get this working within docker.
     thread::spawn(move || {
         Ok(for sig in signals.forever() {
-            println!("sigterm event {} triggered, now exiting program.", sig);
-            return Err(());
+            match sig {
+                SIGINT => {
+                    println!("signal event {} triggered, now exiting program.", sig);
+                    signals.handle().close();
+                    return Err(SIGINT);
+                }
+                _ => continue,
+            }
         })
     });
 
     // This loop is here to currently block the application from finishing, and currently just pings to
     // the postgres database, and axtix web server.
-    // The aim here is for the actix web server, debug web server (in seperate threads) to block until
+    // The aim here is for the actix web server, debug web server, and signals (in seperate threads) to block until
     // A signal is sent back that warrants a graceful termination of the program.
-    loop {
+    Ok(while !signal_handle.is_closed() {
         foundation::database::database::ping_postgres_server(&db, &logger, 5)
             .await
             .unwrap_or_else(|err| logger.error_w("status check failed", Some(err)));
@@ -114,7 +123,7 @@ async fn start_up(
         foundation::server::server::ping_actix_server(&logger, 5)
             .await
             .unwrap_or_else(|err| logger.error_w("server ping failed", Some(err)));
-    }
+    })
 }
 
 // fn shut_down() acts as the shutdown sequence to safely and gracefully shutdown our application.

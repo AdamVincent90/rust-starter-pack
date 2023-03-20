@@ -41,7 +41,7 @@ pub async fn ping_actix_server(
     for i in 1..=max_attempts {
         match client.get("http://localhost:80").send().await {
             Ok(res) => {
-                log.info_w("actix server successfuly pinged", Some(res));
+                log.info_w("actix server successfuly pinged", Some(res.status()));
                 break;
             }
             Err(err) => {
