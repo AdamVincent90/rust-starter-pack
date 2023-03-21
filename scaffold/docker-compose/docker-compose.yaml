@@ -7,6 +7,22 @@ services:
       POSTGRES_PASSWORD: example
     ports:
       - 5439:5432
+  postgres-migrate:
+    image: arigaio/atlas:0.8.1
+    entrypoint: /app/wait4x
+    command: [
+      "postgresql", "postgres://postgres:example@postgres:5432/postgres?sslmode=disable", 
+      "--", 
+      "/atlas", "migrate", "apply", 
+      "--dir", "file://migrations", 
+      "--url", "postgres://postgres:example@postgres:5432/postgres?sslmode=disable",
+      "--tx-mode", "all",
+      "--allow-dirty"
+    ]
+    working_dir: /app
+    volumes:
+      - ./tooling/wait4x:/app/wait4x
+      - ../migrations:/app/migrations
   rust-app:
     build:
       context: ../../
