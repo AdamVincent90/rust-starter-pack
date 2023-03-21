@@ -57,8 +57,14 @@ impl Logger {
     }
 }
 
+// fn new_logger() creates a new logger that sets logging to standard output.
 pub fn new_logger(config: Config) -> Logger {
-    log::set_max_level(config.max_log_level);
+    // Allows logging to support standard outputs.
     env_logger::init();
+
+    // Sets the desired log levels we would like to log out to the standard output.
+    log::set_max_level(config.max_log_level);
+
+    // Create a Logger struct that contains functions for this specific logger.
     Logger { name: config.name }
 }
