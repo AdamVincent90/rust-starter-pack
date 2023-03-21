@@ -1,6 +1,6 @@
-use rust_app::foundation::database::database;
-use rust_app::foundation::logger::logger;
-use rust_app::foundation::server::server;
+use ultimate_rust_service::foundation::database::database;
+use ultimate_rust_service::foundation::logger::logger;
+use ultimate_rust_service::foundation::server::server;
 
 use std::{io::Error, thread};
 
@@ -13,7 +13,7 @@ async fn main() {
 
     // Logger configuration to allow this application to define our custom logger.
     let logger_config = logger::Config {
-        name: String::from("RUST-LOGGER"),
+        name: String::from("RUST-WEB-API"),
         max_log_level: log::LevelFilter::Debug,
     };
 

@@ -3,8 +3,8 @@
 
 # ==============================================================================
 # Binary Commands
-rust-app:
-	cargo run --bin rust-app
+rust-web-api:
+	cargo run --bin rust-web-api
 
 # ==============================================================================
 # Docker Compose

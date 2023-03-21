@@ -21,18 +21,18 @@ services:
     ]
     working_dir: /app
     volumes:
-      - ./tooling/wait4x:/app/wait4x
+      - ./tools/wait4x:/app/wait4x
       - ../migrations:/app/migrations
-  rust-app:
+  rust-web-api:
     build:
       context: ../../
       dockerfile: scaffold/docker/development.dockerfile
-    command: sh -c "cargo watch -x run"
+    command: sh -c "cargo watch -x "run --bin rust-web-api""
     environment:
       - RUST_LOG=debug
     ports:
       - 8123:80
     volumes:
-      - ../../.:/rust-app
+      - ../../.:/rust-web-api
       - ../../stash/.cargo/registry:/usr/local/cargo/registry
       - ../../stash/.target:/root/target

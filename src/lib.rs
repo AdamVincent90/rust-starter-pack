@@ -4,6 +4,9 @@
 
 pub mod business {
     // Your business modules here.
+    pub mod core {
+        pub mod user;
+    }
 }
 
 pub mod foundation {
