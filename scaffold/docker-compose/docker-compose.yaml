@@ -27,7 +27,7 @@ services:
     build:
       context: ../../
       dockerfile: scaffold/docker/development.dockerfile
-    command: sh -c "cargo watch -x "run --bin rust-web-api""
+    command: sh -c 'cargo watch -x "run --bin rust-web-api"'
     environment:
       - RUST_LOG=debug
     ports:

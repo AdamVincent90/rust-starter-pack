@@ -1,3 +1,3 @@
 // This will be the core business logic to handle a user.
 
-pub struct user_core {}
+pub fn get_user_by_id() {}

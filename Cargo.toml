@@ -16,14 +16,14 @@ name = "rust-web-api"
 path = "src/app/services/rust-web-api/main.rs"
 
 # cargo run --bin lumber
-# [[bin]]
-# name = "lumber"
-# path = "src/app/tools/lumber/main.rs"
+[[bin]]
+name = "lumber"
+path = "src/app/tools/lumber/main.rs"
 
 # # cargo run --bin scheduled-worker
-# [[bin]]
-# name = "scheduled-worker"
-# path = "src/app/workers/scheduled/main.rs"
+[[bin]]
+name = "scheduled-worker"
+path = "src/app/workers/scheduled/main.rs"
 
 
 # ==============================================================================

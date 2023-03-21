@@ -4,10 +4,10 @@ use sqlx::error::UnexpectedNullError;
 use sqlx::{postgres, FromRow, Row};
 
 pub struct User {
-    email: String,
-    first_name: String,
-    last_name: String,
-    role: String,
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub role: String,
 }
 
 impl FromRow<'_, postgres::PgRow> for User {
@@ -24,11 +24,14 @@ impl FromRow<'_, postgres::PgRow> for User {
 pub fn query_user_by_id(id: u16) -> Result<User, UnexpectedNullError> {
     match id {
         0 => Err(UnexpectedNullError),
-        _ => Ok(User {
-            email: String::from("john.doe@example.com"),
-            first_name: String::from("John"),
-            last_name: String::from("Doe"),
-            role: String::from("user"),
-        }),
+        _ => {
+            let user = User {
+                email: String::from("john.doe@example.com"),
+                first_name: String::from("John"),
+                last_name: String::from("Doe"),
+                role: String::from("user"),
+            };
+            Ok(user)
+        }
     }
 }
