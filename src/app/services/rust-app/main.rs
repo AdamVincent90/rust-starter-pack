@@ -1,4 +1,6 @@
-use rust_app::foundation;
+use rust_app::foundation::database::database;
+use rust_app::foundation::logger::logger;
+use rust_app::foundation::server::server;
 
 use std::{io::Error, thread};
 
@@ -10,13 +12,13 @@ async fn main() {
     // Begin application.
 
     // Logger configuration to allow this application to define our custom logger.
-    let logger_config = foundation::logger::logger::Config {
+    let logger_config = logger::Config {
         name: String::from("RUST-LOGGER"),
         max_log_level: log::LevelFilter::Debug,
     };
 
     // Logger configuration to allow this application to create our custom logger.
-    let log = foundation::logger::logger::new_logger(logger_config);
+    let log = logger::new_logger(logger_config);
 
     log.info_w("STARTING RUST SERVICE", Some(()));
 
@@ -45,15 +47,13 @@ async fn main() {
 
 // fn start_up() performs all related start up configuration to load our service,
 // this is where you will initialise your modules to then be used within your application.
-async fn start_up(
-    logger: &foundation::logger::logger::Logger,
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Error>> {
     // ---------------------------------------
     // start up configuration.
 
     // ---------------------------------------
     // custom postgres configuration.
-    let database_config = foundation::database::database::Config {
+    let database_config = database::Config {
         db_host: String::from("postgres"),
         db_port: 5432,
         db_username: String::from("postgres"),
@@ -65,7 +65,7 @@ async fn start_up(
 
     // ---------------------------------------
     // custom postgres initialisation. (error propergated back up, otherwise continue)
-    let db = match foundation::database::database::open_postgres_database(database_config).await {
+    let db = match database::open_postgres_database(database_config).await {
         Ok(db) => db,
         Err(err) => {
             return Err(err)?;
@@ -76,14 +76,14 @@ async fn start_up(
 
     // ---------------------------------------
     // custom actix web server configuration.
-    let web_config = foundation::server::server::Config {
+    let web_config = server::Config {
         web_address: String::from("localhost"),
         port: 80,
     };
 
     // ---------------------------------------
     // custom actix web server initialisation. (error propergated back up, otherwise continue)
-    let _server = match foundation::server::server::new_actix_server(web_config).await {
+    let _server = match server::new_actix_server(web_config).await {
         Ok(server) => server,
         Err(err) => {
             return Err(err)?;
@@ -116,21 +116,18 @@ async fn start_up(
     // The aim here is for the actix web server, debug web server, and signals (in seperate threads) to block until
     // A signal is sent back that warrants a graceful termination of the program.
     Ok(while !signal_handle.is_closed() {
-        foundation::database::database::ping_postgres_server(&db, &logger, 5)
+        database::ping_postgres_server(&db, &logger, 5)
             .await
             .unwrap_or_else(|err| logger.error_w("status check failed", Some(err)));
 
-        foundation::server::server::ping_actix_server(&logger, 5)
+        server::ping_actix_server(&logger, 5)
             .await
             .unwrap_or_else(|err| logger.error_w("server ping failed", Some(err)));
     })
 }
 
 // fn shut_down() acts as the shutdown sequence to safely and gracefully shutdown our application.
-fn shut_down(
-    logger: &foundation::logger::logger::Logger,
-    err: Box<dyn std::error::Error>,
-) -> Result<(), Error> {
+fn shut_down(logger: &logger::Logger, err: Box<dyn std::error::Error>) -> Result<(), Error> {
     // We currently just log here to notify we are about to start the shut down process.
     logger.info_w(
         "attempting graceful shutdown of servic : reason ",
