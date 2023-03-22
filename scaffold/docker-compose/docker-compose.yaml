@@ -29,7 +29,12 @@ services:
       dockerfile: scaffold/docker/development.dockerfile
     command: sh -c 'cargo watch -x "run --bin rust-web-api"'
     environment:
-      - RUST_LOG=debug
+      RUST_LOG: debug
+      DB_HOST: '${DB_HOST}'
+      DB_PORT: '${DB_PORT}'
+      DB_USERNAME: '${DB_USERNAME}'
+      DB_PASSWORD: '${DB_PASSWORD}'
+      DB_SCHEMA: '${DB_SCHEMA}'
     ports:
       - 8123:80
     volumes:
