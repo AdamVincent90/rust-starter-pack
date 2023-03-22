@@ -1,9 +1,12 @@
+mod config;
+
 use ultimate_rust_service::foundation::database::database;
 use ultimate_rust_service::foundation::logger::logger;
 use ultimate_rust_service::foundation::server::server;
 
 use std::{io::Error, thread};
 
+use config as app_config;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 
 /// main.rs acts as the entrypoint for our start up and shutdown for this executable.
@@ -51,15 +54,39 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     // ---------------------------------------
     // start up configuration.
 
+    // Define default application configuration.
+    let default_config = app_config::AppConfig {
+        app: app_config::AppSettings {
+            version: "0.0.1".to_string(),
+            environment: "development".to_string(),
+        },
+        web: app_config::WebSettings {
+            address: "localhost".to_string(),
+            port: 80,
+        },
+        db: app_config::DatabaseSettings {
+            host: "postgres".to_string(),
+            port: 5432,
+            username: "postgres".to_string(),
+            password: "example".to_string(),
+            schema: "postgres".to_string(),
+        },
+    };
+
+    // Here, we send out default config to our load from env function to map settings from env.
+    // Defaults should remain, if there is an error, we return back the default config for now.
+    // But we should really end the program gracefully.
+    let app_config = default_config.load_from_env(&logger)?;
+
     // ---------------------------------------
     // custom postgres configuration.
     let database_config = database::Config {
-        db_host: String::from("postgres"),
-        db_port: 5432,
-        db_username: String::from("postgres"),
-        db_password: String::from("example"),
-        db_schema: String::from("postgres"),
-        max_connections: 10,
+        db_host: app_config.db.host,
+        db_port: app_config.db.port,
+        db_username: app_config.db.username,
+        db_password: app_config.db.password,
+        db_schema: app_config.db.schema,
+        max_connections: 2,
         enable_ssl: sqlx::postgres::PgSslMode::Disable,
     };
 
@@ -74,11 +101,13 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     logger.info_w("postgres database loaded", Some(()));
 
+    println!("{}:{}", app_config.web.address, app_config.web.port);
+
     // ---------------------------------------
     // custom actix web server configuration.
     let web_config = server::Config {
-        web_address: String::from("localhost"),
-        port: 80,
+        web_address: app_config.web.address,
+        port: app_config.web.port,
     };
 
     // ---------------------------------------
