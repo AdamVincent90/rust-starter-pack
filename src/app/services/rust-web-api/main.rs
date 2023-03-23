@@ -1,3 +1,5 @@
+mod config;
+
 use ultimate_rust_service::foundation::database::database;
 use ultimate_rust_service::foundation::logger::logger;
 use ultimate_rust_service::foundation::server::server;
@@ -5,6 +7,18 @@ use ultimate_rust_service::foundation::server::server;
 use std::{io::Error, thread};
 
 use signal_hook::{consts::SIGINT, iterator::Signals};
+
+use crate::config::Conf;
+
+// The main config struct, this contains your derived structs that can be mapped from a .env.
+// Defaults of these can also be provided when initialising the struct in fn start_up()
+// All of your custom configurations should be applied in config.rs, derive Serializable, and
+// Impl Conf in order to allow .env mappings and defaults.
+pub struct AppConfig {
+    pub app: config::AppSettings,
+    pub web: config::WebSettings,
+    pub db: config::DatabaseSettings,
+}
 
 /// main.rs acts as the entrypoint for our start up and shutdown for this executable.
 #[actix_web::main]
@@ -51,15 +65,38 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     // ---------------------------------------
     // start up configuration.
 
+    // Define default application configuration.
+    let default_config = AppConfig {
+        // Default configuration can be added like so.
+        app: config::AppSettings {
+            version: String::from("0.0.1"),
+            environment: String::from("development"),
+        }
+        .load_from_env(&logger, "")?, // And then we can override from env if needed.
+        web: config::WebSettings {
+            address: String::from("localhost"),
+            port: 80,
+        }
+        .load_from_env(&logger, "WEB")?,
+        db: config::DatabaseSettings {
+            host: String::from("postgres"),
+            port: 5432,
+            username: String::from("postgres"),
+            password: String::from("example"),
+            schema: String::from("postgres"),
+        }
+        .load_from_env(&logger, "DB")?,
+    };
+
     // ---------------------------------------
     // custom postgres configuration.
     let database_config = database::Config {
-        db_host: String::from("postgres"),
-        db_port: 5432,
-        db_username: String::from("postgres"),
-        db_password: String::from("example"),
-        db_schema: String::from("postgres"),
-        max_connections: 10,
+        db_host: default_config.db.host,
+        db_port: default_config.db.port,
+        db_username: default_config.db.username,
+        db_password: default_config.db.password,
+        db_schema: default_config.db.schema,
+        max_connections: 2,
         enable_ssl: sqlx::postgres::PgSslMode::Disable,
     };
 
@@ -74,11 +111,13 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     logger.info_w("postgres database loaded", Some(()));
 
+    println!("{}:{}", default_config.web.address, default_config.web.port);
+
     // ---------------------------------------
     // custom actix web server configuration.
     let web_config = server::Config {
-        web_address: String::from("localhost"),
-        port: 80,
+        web_address: default_config.web.address,
+        port: default_config.web.port,
     };
 
     // ---------------------------------------
