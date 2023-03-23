@@ -6,6 +6,7 @@ use ultimate_rust_service::foundation::server::server;
 
 use std::{io::Error, thread};
 
+use config as app_config;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 
 use crate::config::Conf;

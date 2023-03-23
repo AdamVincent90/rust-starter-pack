@@ -16,14 +16,14 @@ name = "rust-web-api"
 path = "src/app/services/rust-web-api/main.rs"
 
 # cargo run --bin lumber
-# [[bin]]
-# name = "lumber"
-# path = "src/app/tools/lumber/main.rs"
+[[bin]]
+name = "lumber"
+path = "src/app/tools/lumber/main.rs"
 
 # # cargo run --bin scheduled-worker
-# [[bin]]
-# name = "scheduled-worker"
-# path = "src/app/workers/scheduled/main.rs"
+[[bin]]
+name = "scheduled-worker"
+path = "src/app/workers/scheduled/main.rs"
 
 
 # ==============================================================================
@@ -31,11 +31,11 @@ path = "src/app/services/rust-web-api/main.rs"
 
 [dependencies]
 sqlx = { version = "0.6", features = ["runtime-actix-native-tls", "postgres"] }
+serde = { version = "1.0", features = ["derive"] }
 actix-web = "4.3.1"
 awc = "3.1.1"
 log = "0.4.14"
 env_logger = "0.10.0"
 signal-hook = "0.3.15"
-envy = "0.4.2"
+envy = "0.4"
 dotenvy = "0.15.7"
-serde = "1.0.158"
