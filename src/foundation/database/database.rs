@@ -2,7 +2,7 @@ use std::{thread, time::Duration};
 
 use sqlx::{
     postgres::{self, PgSslMode},
-    Connection,
+    Connection, Executor, PgPool, Statement,
 };
 
 // To clean up and improve.
@@ -68,6 +68,44 @@ pub async fn ping_postgres_server(
     let row: (bool,) = sqlx::query_as("SELECT true").fetch_one(db).await?;
 
     log.info_w("ping confirmed : check completed", Some(row));
+
+    Ok(())
+}
+
+pub async fn execute_statement(
+    db: &PgPool,
+    query: &str,
+    logger: &logger::Logger,
+) -> Result<(), sqlx::Error> {
+    // Log beginning of sql statement
+    logger.info_w("starting postgres execute statement", Some(()));
+
+    // Log query
+
+    // Prepare Query
+
+    let statement = match db.prepare(&query).await {
+        Ok(statement) => statement,
+        Err(err) => return Err(err),
+    };
+
+    // Sanitise Query (if required)
+    // TODO
+
+    // Transaction Begin
+    // TODO
+
+    // Execute Query
+    match db.execute(statement.sql()).await {
+        Ok(result) => result,
+        Err(err) => return Err(err), // Rollback
+    };
+
+    // Log end of sql statement
+    logger.info_w("completed postgres execute statement", Some(()));
+
+    // Commit
+    // TODO
 
     Ok(())
 }

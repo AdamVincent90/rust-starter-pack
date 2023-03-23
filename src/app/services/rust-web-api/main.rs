@@ -155,13 +155,24 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     // The aim here is for the actix web server, debug web server, and signals (in seperate threads) to block until
     // A signal is sent back that warrants a graceful termination of the program.
     Ok(while !signal_handle.is_closed() {
+        // As a test we ping the database
         database::ping_postgres_server(&db, &logger, 5)
             .await
             .unwrap_or_else(|err| logger.error_w("status check failed", Some(err)));
 
+        // As a test we ping the web server
         server::ping_actix_server(&logger, 5)
             .await
             .unwrap_or_else(|err| logger.error_w("server ping failed", Some(err)));
+
+        // Here we insert a new record as a test
+        database::execute_statement(
+            &db,
+            "INSERT INTO users (email, first_name, last_name, role) VALUES ('example@example.com', 'John', 'Doe', 'user')",
+            logger,
+        ).await.unwrap_or_else(|err| {
+            logger.error_w("insert statement failed", Some(err));
+        })
     })
 }
 
