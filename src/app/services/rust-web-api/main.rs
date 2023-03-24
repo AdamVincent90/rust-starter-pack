@@ -1,8 +1,9 @@
 mod config;
+mod handlers;
 
-use ultimate_rust_service::foundation::database::database;
+use tokio::sync::oneshot;
 use ultimate_rust_service::foundation::logger::logger;
-use ultimate_rust_service::foundation::server::server;
+use ultimate_rust_service::foundation::{database::database, server::server};
 
 use std::{io::Error, thread};
 
@@ -21,7 +22,7 @@ pub struct AppConfig {
 }
 
 /// main.rs acts as the entrypoint for our start up and shutdown for this executable.
-#[actix_web::main]
+#[tokio::main]
 async fn main() {
     // Begin application.
 
@@ -113,21 +114,18 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     println!("{}:{}", default_config.web.address, default_config.web.port);
 
-    // ---------------------------------------
-    // custom actix web server configuration.
-    let web_config = server::Config {
-        web_address: default_config.web.address,
-        port: default_config.web.port,
-    };
+    let (_send, recv) = oneshot::channel();
 
     // ---------------------------------------
-    // custom actix web server initialisation. (error propergated back up, otherwise continue)
-    let _server = match server::new_actix_server(web_config).await {
-        Ok(server) => server,
-        Err(err) => {
-            return Err(err)?;
-        }
-    };
+    // custom actix web server initialisation.
+    let srv = handlers::handlers::load_web_handlers(
+        default_config.web.address,
+        default_config.web.port,
+        recv,
+    )
+    .unwrap();
+
+    srv.run_sever().await?;
 
     logger.info_w("actix server loaded", Some(()));
 
@@ -161,9 +159,9 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
             .unwrap_or_else(|err| logger.error_w("status check failed", Some(err)));
 
         // As a test we ping the web server
-        server::ping_actix_server(&logger, 5)
-            .await
-            .unwrap_or_else(|err| logger.error_w("server ping failed", Some(err)));
+        server::ping_server(5).await.unwrap_or_else(|err| {
+            logger.error_w("server ping failed", Some(err));
+        });
 
         // Here we insert a new record as a test
         database::execute_statement(
@@ -174,6 +172,8 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
             logger.error_w("insert statement failed", Some(err));
         })
     })
+
+    // This is where we will create threads that await signals that will listen to potential shutdown events.
 }
 
 // fn shut_down() acts as the shutdown sequence to safely and gracefully shutdown our application.

@@ -1,59 +1,109 @@
-use std::{thread, time::Duration};
+use std::{
+    net::{IpAddr, SocketAddr},
+    str::FromStr,
+};
 
-use crate::foundation::logger::logger;
-use actix_web::{dev::ServerHandle, get, rt, App, Error, HttpServer, Responder};
 use awc::error::SendRequestError;
+use axum::routing::get;
+use axum::Router;
+use signal_hook::low_level::exit;
+use tokio::sync::oneshot::{Receiver, Sender};
 
-// To clean up and improve
+// The main Axum struct.
+pub struct Axum {
+    pub web_address: String,
+    pub port: u16,
+    pub router: Router,
+    pub tracer: String,
+    pub shutdown_signal: Receiver<()>,
+}
 
+// Configuration struct for our Axum.
 pub struct Config {
     pub web_address: String,
     pub port: u16,
+    pub router: Router,
+    pub tracer: String,
+    pub shutdown_signal: Receiver<()>,
 }
 
-pub async fn new_actix_server(config: Config) -> Result<ServerHandle, Error> {
-    let srv = HttpServer::new(|| App::new().service(ping))
-        .bind((config.web_address, config.port))
-        .unwrap()
-        .run();
-
-    let handler = srv.handle();
-
-    // This adds the server to a new thread so the application is not awaiting returning handler.
-    // This whole function will need lots of tidy up.
-    rt::spawn(srv);
-
-    Ok(handler)
+// fn new() returns a new Axum struct.
+pub fn new(config: Config) -> Axum {
+    Axum {
+        web_address: config.web_address,
+        port: config.port,
+        router: config.router,
+        tracer: config.tracer,
+        shutdown_signal: config.shutdown_signal,
+    }
 }
 
-#[get("/")]
-async fn ping() -> impl Responder {
-    format!("ping successful")
+// Axum contains functionalities to run the server.
+impl Axum {
+    // aync fn run_server() starts the axum server, ready to listen to requests, and then handle based on the axum
+    // configuration provided.
+    pub async fn run_sever(self) -> Result<(), Box<dyn std::error::Error>> {
+        // We want to initialise a tracer (This could be run in a seperate thread on a seperate server)
+
+        // Add App level middleware
+
+        // We provide a base route to ping.
+        // All other routes should be added to the server prior to running
+        // Routes added prior will contain route level middleware.
+        let routes = self.router.route(
+            "/",
+            get(|| async {
+                format!("ping successful");
+            }),
+        );
+
+        // Attempt to parse string of loopback address to u8.
+        let host = IpAddr::from_str(&self.web_address).unwrap_or_else(|err| {
+            println!("{}", err);
+            exit(1);
+        });
+
+        // Create a new socket.
+        let socket_address = SocketAddr::new(host, self.port);
+
+        // Bind our socket with the provided socket address.
+        // We also then start serving the web server, this will then block the application from running.
+        // We also add a signal receiver that listens to a sender signal. Once that signal is received,
+        // We can then unblock the application to shutdown gracefully.
+        let serving = axum::Server::bind(&socket_address)
+            .serve(routes.into_make_service())
+            .with_graceful_shutdown(async {
+                self.shutdown_signal.await.ok();
+            });
+
+        // Here we just wait for the blocked application to either receive a signal, or an error that requires the server to exit.
+        // This allows us to atleast propergate the error the call stack.
+        if let Err(err) = serving.await {
+            return Err(Box::new(err));
+        };
+        Ok(())
+    }
 }
 
-pub async fn ping_actix_server(
-    log: &logger::Logger,
-    max_attempts: u8,
-) -> Result<(), SendRequestError> {
-    thread::sleep(Duration::from_secs(5));
+// async fn ping_server() does a ping to the server to validate is liveness.
+pub async fn ping_server(max_attempts: u8) -> Result<(), SendRequestError> {
+    // We use awc as the client to send requests for now.
     let client = awc::Client::default();
 
+    // Based on the number of attempts provided, we keep pinging the server until this limit is reached
+    // Once it has, we return an error.
     for i in 1..=max_attempts {
-        match client.get("http://localhost:80").send().await {
-            Ok(res) => {
-                log.info_w("actix server successfuly pinged", Some(res.status()));
+        match client.get("http://127.0.0.1:80").send().await {
+            Ok(_) => {
                 break;
             }
             Err(err) => {
                 if i == max_attempts {
-                    log.error_w("failed to ping actix server", Some(&err));
                     return Err(err);
                 }
             }
         };
     }
-
-    log.info_w("actix ping operation completed", Some(()));
 
     Ok(())
 }
