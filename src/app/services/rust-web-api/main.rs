@@ -1,11 +1,12 @@
 mod config;
 mod handlers;
 
+use signal_hook::consts::SIGTERM;
 use tokio::sync::oneshot;
+use ultimate_rust_service::foundation::database::database;
 use ultimate_rust_service::foundation::logger::logger;
-use ultimate_rust_service::foundation::{database::database, server::server};
 
-use std::{io::Error, thread};
+use std::io::Error;
 
 use signal_hook::{consts::SIGINT, iterator::Signals};
 
@@ -75,7 +76,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         }
         .load_from_env(&logger, "")?, // And then we can override from env if needed.
         web: config::WebSettings {
-            address: String::from("localhost"),
+            address: String::from("127.0.0.1"),
             port: 80,
         }
         .load_from_env(&logger, "WEB")?,
@@ -89,8 +90,8 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         .load_from_env(&logger, "DB")?,
     };
 
-    // ---------------------------------------
-    // custom postgres configuration.
+    // -----------------------------------------------------------
+    // Custom postgres configuration, and initialsation.
     let database_config = database::Config {
         db_host: default_config.db.host,
         db_port: default_config.db.port,
@@ -101,8 +102,6 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         enable_ssl: sqlx::postgres::PgSslMode::Disable,
     };
 
-    // ---------------------------------------
-    // custom postgres initialisation. (error propergated back up, otherwise continue)
     let db = match database::open_postgres_database(database_config).await {
         Ok(db) => db,
         Err(err) => {
@@ -112,68 +111,91 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     logger.info_w("postgres database loaded", Some(()));
 
-    println!("{}:{}", default_config.web.address, default_config.web.port);
+    // Now all custom modules have been loaded, we can now start creating threads for our web server, signals, and any other
+    // threads we would like to add.
 
-    let (_send, recv) = oneshot::channel();
+    // Firstly we will create a one time signal and thread that sends a signal to the receiver upon a SIGINT OR SIGTERM event.
+    let (signal_send, signal_receive) = oneshot::channel();
 
-    // ---------------------------------------
-    // custom actix web server initialisation.
-    let srv = handlers::handlers::load_web_handlers(
-        default_config.web.address,
-        default_config.web.port,
-        recv,
-    )
-    .unwrap();
-
-    srv.run_sever().await?;
-
-    logger.info_w("actix server loaded", Some(()));
-
-    // Create a signal that listens to SIGINT events.
-    let mut signals = Signals::new(&[SIGINT])?;
-    let signal_handle = signals.handle();
-
-    // We spawn a thread and passes in any mutable values defined.
-    // This needs to be improved. Will need to get this working within docker.
-    thread::spawn(move || {
-        Ok(for sig in signals.forever() {
-            match sig {
+    // This is where we pass in our signals into a new thread. This thread simply loops over the signal forever, until one
+    // of SIGTERM or SIGINT signal has been matched. Because we are using a loop here, we need to let the borrow checker
+    // know that signal_send is a Option, and if we can take from it, we send a signal back to the receiver.
+    tokio::spawn(async move {
+        let mut signal_send = Some(signal_send);
+        let mut signal_interupt = Signals::new(&[SIGINT, SIGTERM]).unwrap();
+        for signal in signal_interupt.forever() {
+            match signal {
                 SIGINT => {
-                    println!("signal event {} triggered, now exiting program.", sig);
-                    signals.handle().close();
-                    return Err(SIGINT);
+                    if let Some(signal_send) = signal_send.take() {
+                        signal_send.send(()).ok();
+                    }
                 }
-                _ => continue,
+                SIGTERM => {
+                    if let Some(signal_send) = signal_send.take() {
+                        signal_send.send(()).ok();
+                    }
+                }
+                _ => {
+                    continue;
+                }
             }
-        })
+        }
     });
 
-    // This loop is here to currently block the application from finishing, and currently just pings to
-    // the postgres database, and axtix web server.
-    // The aim here is for the actix web server, debug web server, and signals (in seperate threads) to block until
-    // A signal is sent back that warrants a graceful termination of the program.
-    Ok(while !signal_handle.is_closed() {
-        // As a test we ping the database
-        database::ping_postgres_server(&db, &logger, 5)
-            .await
-            .unwrap_or_else(|err| logger.error_w("status check failed", Some(err)));
+    // Finally, we can set up our web server, we also create a onetime channel for graceful shutdowns.
+    let (axum_send, axum_receive) = oneshot::channel();
 
-        // As a test we ping the web server
-        server::ping_server(5).await.unwrap_or_else(|err| {
-            logger.error_w("server ping failed", Some(err));
-        });
+    let handler_config = handlers::handlers::HandlerConfig {
+        web_address: default_config.web.address,
+        web_port: default_config.web.port,
+        debug_address: String::new(),
+        debug_port: 90,
+        logger: logger,
+        db: db,
+    };
 
-        // Here we insert a new record as a test
-        database::execute_statement(
-            &db,
-            "INSERT INTO users (email, first_name, last_name, role) VALUES ('example@example.com', 'John', 'Doe', 'user')",
-            logger,
-        ).await.unwrap_or_else(|err| {
-            logger.error_w("insert statement failed", Some(err));
-        })
-    })
+    // We create our web handlers by passing in our default config, and a axum signal, that will send a signal
+    // back to the receiver, this creates a new axum server ready to be run.
+    let srv = handlers::handlers::prepare_web_handler(&handler_config).unwrap_or_else(|err| {
+        logger.error_w("could not prepare web handlers", Some(&err));
+        return Err(err).unwrap();
+    });
 
-    // This is where we will create threads that await signals that will listen to potential shutdown events.
+    // Once we run the server, this will now be ran in a seperate thread, as above, the channel we send will notifiy the below
+    // select statement.
+    srv.run_sever(axum_send).unwrap_or_else(|err| {
+        return Err(err).unwrap();
+    });
+
+    logger.info_w("axum server loaded", Some(()));
+
+    // This is where we will block the main thread until one of these signals is received back. Once a signal has been sent
+    // From either, our packages, or from sigint, we then attempt to gracefully shutdown the application, if an error occurs
+    // from then, we will attempt to shutdown the program ungracefully, and then a solution to stop these should be implemented.
+    tokio::select! {
+            val = axum_receive => {
+                logger.info_w("signal received from axum server, starting graceful shutdown", Some(()));
+                match val {
+                    Ok(_) => {
+                        return Ok(());
+                    },
+                    Err(err) => {
+                        return Err(Box::new(err));
+                    }
+                };
+            },
+            val = signal_receive => {
+              logger.info_w("signal received from sigint, starting graceful shutdown", Some(()));
+                match val {
+                    Ok(_) => {
+                        return Ok(());
+                    },
+                    Err(err) => {
+                        return Err(Box::new(err));
+                    }
+                };
+            },
+    };
 }
 
 // fn shut_down() acts as the shutdown sequence to safely and gracefully shutdown our application.

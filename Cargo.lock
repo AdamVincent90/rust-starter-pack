@@ -269,6 +269,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-macros"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bb524613be645939e280b7279f7b017f98cf7f5ef084ec374df373530e73277"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.8",
+]
+
+[[package]]
 name = "base64"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1884,6 +1896,7 @@ version = "0.1.0"
 dependencies = [
  "awc",
  "axum",
+ "axum-macros",
  "dotenvy",
  "env_logger",
  "envy",
@@ -1892,6 +1905,7 @@ dependencies = [
  "signal-hook",
  "sqlx",
  "tokio",
+ "tower",
 ]
 
 [[package]]
