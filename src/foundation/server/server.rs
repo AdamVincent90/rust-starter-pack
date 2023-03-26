@@ -1,29 +1,12 @@
 use std::{
-    convert::Infallible,
-    future::Future,
     net::{IpAddr, SocketAddr},
     str::FromStr,
 };
 
-use awc::{error::SendRequestError, http::StatusCode, ResponseBody};
-use axum::{
-    body::{Body, HttpBody},
-    handler::Handler,
-    http::{status::InvalidStatusCode, Request},
-    middleware::{from_fn, Next},
-    response::Response,
-    routing::{on, Route},
-    Router,
-};
-use axum::{
-    response::IntoResponse,
-    routing::{get, MethodFilter},
-};
+use awc::error::SendRequestError;
+use axum::Router;
 use signal_hook::low_level::exit;
 use tokio::sync::oneshot::Sender;
-use tower::{Layer, ServiceBuilder};
-
-use super::middleware::{self, Middleware};
 
 #[derive(Clone)]
 // The main Axum struct.
@@ -59,18 +42,6 @@ impl Axum {
     pub fn run_sever(self, shutdown_signal: Sender<()>) -> Result<(), Box<dyn std::error::Error>> {
         // We want to initialise a tracer (This could be run in a seperate thread on a seperate server)
 
-        // Add App level middleware
-
-        // We provide a base route to ping.
-        // All other routes should be added to the server prior to running
-        // Routes added prior will contain route level middleware.
-        let routes = self.router.route(
-            "/",
-            get(|| async {
-                format!("ping successful");
-            }),
-        );
-
         // Attempt to parse string of loopback address to u8.
         let host = IpAddr::from_str(&self.web_address).unwrap_or_else(|err| {
             println!("{}", err);
@@ -85,7 +56,8 @@ impl Axum {
             // We also then start serving the web server, this will then block the application from running.
             // We also add a signal receiver that listens to a sender signal. Once that signal is received,
             // We can then unblock the application to shutdown gracefully.
-            let serving = axum::Server::bind(&socket_address).serve(routes.into_make_service());
+            let serving =
+                axum::Server::bind(&socket_address).serve(self.router.into_make_service());
 
             // Here we just wait for the blocked application to either receive a signal, or an error that requires the server to exit.
             // This allows us to atleast propergate the error the call stack.
@@ -106,7 +78,7 @@ pub async fn ping_server(max_attempts: u8) -> Result<(), SendRequestError> {
     // Based on the number of attempts provided, we keep pinging the server until this limit is reached
     // Once it has, we return an error.
     for i in 1..=max_attempts {
-        match client.get("http://127.0.0.1:80").send().await {
+        match client.get("http://127.0.0.1:4080").send().await {
             Ok(_) => {
                 break;
             }

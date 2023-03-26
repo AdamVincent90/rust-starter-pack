@@ -22,6 +22,8 @@ pub struct AppSettings {
 pub struct WebSettings {
     pub address: String,
     pub port: u16,
+    pub debug_address: String,
+    pub debug_port: u16,
 }
 
 // We derive Deserialize to allow env vars to map to this struct.

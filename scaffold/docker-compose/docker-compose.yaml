@@ -37,6 +37,7 @@ services:
       DB_SCHEMA: '${DB_SCHEMA}'
     ports:
       - 8123:80
+      - 8128:4080
     volumes:
       - ../../.:/rust-web-api
       - ../../stash/.cargo/registry:/usr/local/cargo/registry

@@ -78,6 +78,8 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         web: config::WebSettings {
             address: String::from("127.0.0.1"),
             port: 80,
+            debug_address: String::from("127.0.0.1"),
+            debug_port: 4080,
         }
         .load_from_env(&logger, "WEB")?,
         db: config::DatabaseSettings {
@@ -142,28 +144,35 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         }
     });
 
-    // Finally, we can set up our web server, we also create a onetime channel for graceful shutdowns.
-    let (axum_send, axum_receive) = oneshot::channel();
+    // Finally, we can set up our web and debug server, we also create a onetime channel for graceful shutdowns.
+    let (web_send, web_recv) = oneshot::channel();
+    let (debug_send, debug_recv) = oneshot::channel();
 
     let handler_config = handlers::handlers::HandlerConfig {
         web_address: default_config.web.address,
         web_port: default_config.web.port,
-        debug_address: String::new(),
-        debug_port: 90,
+        debug_address: default_config.web.debug_address,
+        debug_port: default_config.web.debug_port,
         logger: logger,
         db: db,
     };
 
-    // We create our web handlers by passing in our default config, and a axum signal, that will send a signal
-    // back to the receiver, this creates a new axum server ready to be run.
-    let srv = handlers::handlers::prepare_web_handler(&handler_config).unwrap_or_else(|err| {
-        logger.error_w("could not prepare web handlers", Some(&err));
+    // Finally, we create our new rust app, that passes in all the relevant configurations from start up.
+    // Ownership is transferred to new_rust_app.
+    let (web_server, debug_server) = handlers::handlers::new_rust_app(handler_config)
+        .unwrap_or_else(|err| {
+            logger.error_w("could not prepare web handlers", Some(&err));
+            return Err(err).unwrap();
+        });
+
+    // This will also contain a seperate debug server, serving on a different port and ofcourse thread.
+    web_server.run_sever(web_send).unwrap_or_else(|err| {
         return Err(err).unwrap();
     });
 
     // Once we run the server, this will now be ran in a seperate thread, as above, the channel we send will notifiy the below
     // select statement.
-    srv.run_sever(axum_send).unwrap_or_else(|err| {
+    debug_server.run_sever(debug_send).unwrap_or_else(|err| {
         return Err(err).unwrap();
     });
 
@@ -173,8 +182,19 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     // From either, our packages, or from sigint, we then attempt to gracefully shutdown the application, if an error occurs
     // from then, we will attempt to shutdown the program ungracefully, and then a solution to stop these should be implemented.
     tokio::select! {
-            val = axum_receive => {
-                logger.info_w("signal received from axum server, starting graceful shutdown", Some(()));
+            val = web_recv => {
+                logger.info_w("signal received from web server, starting graceful shutdown", Some(()));
+                match val {
+                    Ok(_) => {
+                        return Ok(());
+                    },
+                    Err(err) => {
+                        return Err(Box::new(err));
+                    }
+                };
+            },
+            val = debug_recv => {
+                logger.info_w("signal received from debug server, starting graceful shutdown", Some(()));
                 match val {
                     Ok(_) => {
                         return Ok(());
