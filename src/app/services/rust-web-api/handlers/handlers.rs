@@ -1,10 +1,9 @@
-use axum::routing::MethodFilter;
-use axum::{Error, Router};
 use sqlx::postgres;
+use ultimate_rust_service::business;
 use ultimate_rust_service::foundation::logger::logger;
 use ultimate_rust_service::foundation::server::server::{self, Axum};
 
-use super::versions::version_one;
+use super::versions::version_one::users;
 
 // This is where we provide all our packages, and options to prepare our web handler with the relevant
 // features they require to perform business operations.
@@ -20,7 +19,7 @@ pub struct HandlerConfig<'a> {
 
 // fn prepare_web_handler() loads and initiates our web server with our app level configurations and logic, ready
 // to perform business level tasks.
-pub fn prepare_web_handler(config: &HandlerConfig) -> Result<server::Axum, axum::Error> {
+pub fn prepare_web_handler(config: &HandlerConfig) -> Result<Axum, axum::Error> {
     // Here we add our business level middleware
 
     // Here we add our routes based on version (prefixed)
@@ -29,29 +28,27 @@ pub fn prepare_web_handler(config: &HandlerConfig) -> Result<server::Axum, axum:
     // As stated before, this will be in a seperate thread so we can have multiple senders potentially
     // gracefully shut down the application.
 
-    let server = server::new(server::Config {
+    let preload = server::new(server::Config {
         web_address: config.web_address.clone(),
         port: config.web_port,
         router: axum::Router::new(),
         tracer: String::from(""),
     });
 
-    load_version_one_routes(&config, &server);
+    let axum = load_version_one_routes(&config, preload).unwrap_or_else(|err| {
+        return Err(err).unwrap();
+    });
 
-    Ok(server)
+    Ok(axum)
 }
 
-fn load_version_one_routes(config: &HandlerConfig, axum: &Axum) {
-    let prefix = "/v1";
-
-    let user_group = version_one::users::UserHandlers {
-        version: prefix.to_string(),
+fn load_version_one_routes(config: &HandlerConfig, axum: Axum) -> Result<Axum, axum::Error> {
+    let user_handlers = users::UserHandlers {
+        version: "v1".to_string(),
+        user_core: business::core::user::user::new_core(&config.logger, &config.db),
     };
 
-    // axum.register_route(
-    //     MethodFilter::GET,
-    //     prefix,
-    //     "/users",
-    //     version_one::users::UserHandlers::get_users,
-    // );
+    //user_handlers.register_user_routes(axum.router, "/v1");
+
+    Ok(axum)
 }

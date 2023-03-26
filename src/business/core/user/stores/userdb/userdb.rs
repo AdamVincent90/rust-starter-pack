@@ -1,13 +1,33 @@
 // This is where all logic goes to perform user based database operations.
 
 use sqlx::error::UnexpectedNullError;
-use sqlx::{postgres, FromRow, Row};
+use sqlx::{postgres, FromRow, PgPool, Row};
+
+use crate::foundation::logger::logger::Logger;
 
 pub struct User {
     pub email: String,
     pub first_name: String,
     pub last_name: String,
     pub role: String,
+}
+
+pub struct UserStore {
+    pub logger: Logger,
+    pub db: PgPool,
+}
+
+pub fn new_store(logger: Logger, db: PgPool) -> UserStore {
+    UserStore {
+        logger: logger,
+        db: db,
+    }
+}
+
+pub trait UserDb {
+    fn query_users();
+    fn query_user_by_id();
+    fn insert_new_user();
 }
 
 impl FromRow<'_, postgres::PgRow> for User {

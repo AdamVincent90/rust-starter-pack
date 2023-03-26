@@ -4,6 +4,7 @@ use std::fmt::Debug;
 
 // To clean up and improve.
 
+#[derive(Clone)]
 pub struct Logger {
     name: String,
 }

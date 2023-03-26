@@ -1,17 +1,31 @@
 use std::{
+    convert::Infallible,
+    future::Future,
     net::{IpAddr, SocketAddr},
     str::FromStr,
 };
 
-use awc::error::SendRequestError;
-use axum::{handler::Handler, Router};
+use awc::{error::SendRequestError, http::StatusCode, ResponseBody};
+use axum::{
+    body::{Body, HttpBody},
+    handler::Handler,
+    http::{status::InvalidStatusCode, Request},
+    middleware::{from_fn, Next},
+    response::Response,
+    routing::{on, Route},
+    Router,
+};
 use axum::{
     response::IntoResponse,
     routing::{get, MethodFilter},
 };
 use signal_hook::low_level::exit;
 use tokio::sync::oneshot::Sender;
+use tower::{Layer, ServiceBuilder};
 
+use super::middleware::{self, Middleware};
+
+#[derive(Clone)]
 // The main Axum struct.
 pub struct Axum {
     pub web_address: String,
@@ -81,37 +95,6 @@ impl Axum {
         });
 
         Ok(())
-    }
-
-    pub fn register_route<F, R, H, MW>(
-        mut self,
-        method: MethodFilter,
-        version: &str,
-        path: &str,
-        handler: H,
-    ) where
-        R: IntoResponse,
-        F: Fn() -> R + 'static,
-        H: Handler<F, ()>,
-        MW: Fn(F) -> MW + Clone + Send,
-    {
-        // Do some checks for this..
-        let true_path = format!("{}{}", version, path);
-
-        // Lets try and add route level middleware..
-        // match route_level_middleware {
-        //     Some(mw) => {
-        //         // for i in (0..mw.len() - 1).rev() {
-        //         //     self.router = self.router.layer(mw[i]);
-        //         // }
-        //     }
-        //     None => {
-        //         print!("");
-        //     }
-        // };
-
-        // Dont do ths, this is ugly and bad.
-        self.router = self.router.route(&true_path, get(handler)).clone();
     }
 }
 

@@ -1,3 +1,20 @@
 // This will be the core business logic to handle a user.
 
-pub fn get_user_by_id() {}
+use sqlx::PgPool;
+
+use crate::foundation::logger::logger::Logger;
+
+#[derive(Clone)]
+pub struct Core {
+    pub logger: Logger,
+    pub db: PgPool,
+}
+
+pub fn new_core(logger: &Logger, db: &PgPool) -> Core {
+    Core {
+        logger: logger.clone(),
+        db: db.clone(),
+    }
+}
+
+impl Core {}
