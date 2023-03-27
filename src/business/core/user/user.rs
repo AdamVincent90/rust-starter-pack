@@ -38,4 +38,15 @@ impl Core {
 
         Ok(result)
     }
+
+    pub fn v1_post_user(&self) -> Result<axum::http::StatusCode, UnexpectedNullError> {
+        println!("in core!");
+        let result = self.user_store.query_user_by_id(1).unwrap_or_else(|err| {
+            return Err(err).unwrap();
+        });
+
+        println!("{}", result.email);
+
+        Ok(axum::http::StatusCode::CREATED)
+    }
 }

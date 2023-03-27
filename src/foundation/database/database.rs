@@ -65,12 +65,18 @@ pub async fn ping_postgres_server(
     Ok(())
 }
 
-pub async fn execute_statement(db: &PgPool, query: &str) -> Result<(), sqlx::Error> {
+pub async fn execute_statement(
+    db: &PgPool,
+    query: &str,
+    // data:  A struct,
+) -> Result<(), sqlx::Error> {
     // Prepare Query
     let statement = match db.prepare(&query).await {
         Ok(statement) => statement,
         Err(err) => return Err(err),
     };
+
+    // TODO Here i want to use data to map statement to struct based on field names
 
     // Log Query
     // TODO

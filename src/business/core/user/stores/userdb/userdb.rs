@@ -3,6 +3,8 @@
 use sqlx::error::UnexpectedNullError;
 use sqlx::PgPool;
 
+use crate::business::core::user::models::V1PostUser;
+use crate::foundation::database;
 use crate::foundation::logger::logger::Logger;
 
 use super::models::User;
@@ -44,5 +46,26 @@ impl UserStore {
                 Ok(user)
             }
         }
+    }
+
+    pub async fn create_user(&self, user: V1PostUser) -> Result<(), sqlx::Error> {
+        println!("in store!");
+
+        let query = "INSERT INTO users(email, first_name, last_name, role) VALUES ($1,$2,$3,$4)";
+
+        let data = User {
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            role: user.role,
+        };
+
+        println!("{:?}", data.email);
+
+        if let Err(err) = database::database::execute_statement(&self.db, query).await {
+            return Err(err);
+        }
+
+        Ok(())
     }
 }

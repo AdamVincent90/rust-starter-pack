@@ -1,5 +1,5 @@
 use super::versions::version_one::users;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Json;
 use sqlx::postgres;
 use std::sync::Arc;
@@ -73,7 +73,11 @@ fn initialise_v1_web_routing(config: &HandlerConfig) -> Axum {
         // GET ( /v1/users/:id )
         .route(
             format!("/{}{}", "/v1", "/users/:id").as_str(),
-            get(users::v1_get_users_by_id),
+            get(users::v1_get_user_by_id),
+        )
+        .route(
+            format!("/{}{}", "/v1", "/users").as_str(),
+            post(users::v1_post_user),
         )
         // Create context for users using Arc.
         .with_state(Arc::new(user_context));
