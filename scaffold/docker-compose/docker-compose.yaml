@@ -30,6 +30,7 @@ services:
     command: sh -c 'cargo watch -x "run --bin rust-web-api"'
     environment:
       RUST_LOG: debug
+      RUST_BACKTRACE: 1
       DB_HOST: '${DB_HOST}'
       DB_PORT: '${DB_PORT}'
       DB_USERNAME: '${DB_USERNAME}'

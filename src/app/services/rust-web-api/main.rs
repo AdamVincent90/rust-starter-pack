@@ -76,9 +76,9 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         }
         .load_from_env(&logger, "")?, // And then we can override from env if needed.
         web: config::WebSettings {
-            address: String::from("127.0.0.1"),
+            address: String::from("0.0.0.0"),
             port: 80,
-            debug_address: String::from("127.0.0.1"),
+            debug_address: String::from("0.0.0.0"),
             debug_port: 4080,
         }
         .load_from_env(&logger, "WEB")?,

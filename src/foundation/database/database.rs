@@ -5,10 +5,6 @@ use sqlx::{
     Connection, Executor, PgPool, Statement,
 };
 
-// To clean up and improve.
-
-use crate::foundation::logger::logger;
-
 pub struct Config {
     pub db_host: String,
     pub db_port: u16,
@@ -43,7 +39,6 @@ pub async fn open_postgres_database(config: Config) -> Result<postgres::PgPool, 
 
 pub async fn ping_postgres_server(
     db: &sqlx::postgres::PgPool,
-    log: &logger::Logger,
     max_attempts: u8,
 ) -> Result<(), sqlx::Error> {
     for i in 1..=max_attempts {
@@ -53,41 +48,32 @@ pub async fn ping_postgres_server(
 
         match connection.ping().await {
             Ok(_) => {
-                log.info_w("connection ping found", Some(connection));
                 break;
             }
             Err(e) => {
-                log.error_w("connection ping failed", Some(e));
                 if i == max_attempts {
-                    return Err(sqlx::Error::PoolClosed);
+                    return Err(e);
                 }
             }
         }
     }
 
-    let row: (bool,) = sqlx::query_as("SELECT true").fetch_one(db).await?;
-
-    log.info_w("ping confirmed : check completed", Some(row));
+    if let Err(err) = sqlx::query("SELECT true").fetch_one(db).await {
+        return Err(err);
+    }
 
     Ok(())
 }
 
-pub async fn execute_statement(
-    db: &PgPool,
-    query: &str,
-    logger: &logger::Logger,
-) -> Result<(), sqlx::Error> {
-    // Log beginning of sql statement
-    logger.info_w("starting postgres execute statement", Some(()));
-
-    // Log query
-
+pub async fn execute_statement(db: &PgPool, query: &str) -> Result<(), sqlx::Error> {
     // Prepare Query
-
     let statement = match db.prepare(&query).await {
         Ok(statement) => statement,
         Err(err) => return Err(err),
     };
+
+    // Log Query
+    // TODO
 
     // Sanitise Query (if required)
     // TODO
@@ -101,8 +87,61 @@ pub async fn execute_statement(
         Err(err) => return Err(err), // Rollback
     };
 
-    // Log end of sql statement
-    logger.info_w("completed postgres execute statement", Some(()));
+    // Commit
+    // TODO
+
+    Ok(())
+}
+
+pub async fn query_single_row(db: &PgPool, query: &str) -> Result<(), sqlx::Error> {
+    // Prepare Query
+    let statement = match db.prepare(&query).await {
+        Ok(statement) => statement,
+        Err(err) => return Err(err),
+    };
+
+    // Log Query
+    // TODO
+
+    // Sanitise Query (if required)
+    // TODO
+
+    // Transaction Begin
+    // TODO
+
+    // Execute Query
+    match db.execute(statement.sql()).await {
+        Ok(result) => result,
+        Err(err) => return Err(err), // Rollback
+    };
+
+    // Commit
+    // TODO
+
+    Ok(())
+}
+
+pub async fn query_many_rows(db: &PgPool, query: &str) -> Result<(), sqlx::Error> {
+    // Prepare Query
+    let statement = match db.prepare(&query).await {
+        Ok(statement) => statement,
+        Err(err) => return Err(err),
+    };
+
+    // Log Query
+    // TODO
+
+    // Sanitise Query (if required)
+    // TODO
+
+    // Transaction Begin
+    // TODO
+
+    // Execute Query
+    match db.execute(statement.sql()).await {
+        Ok(result) => result,
+        Err(err) => return Err(err), // Rollback
+    };
 
     // Commit
     // TODO

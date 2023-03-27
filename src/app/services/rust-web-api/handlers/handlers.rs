@@ -1,6 +1,6 @@
 use super::versions::version_one::users;
 use axum::routing::get;
-use axum::Extension;
+use axum::Json;
 use sqlx::postgres;
 use std::sync::Arc;
 use ultimate_rust_service::business;
@@ -41,7 +41,9 @@ fn initialise_debug_routing(config: &HandlerConfig) -> Axum {
         .route(
             "/",
             get(|| async {
-                format!("ping successful");
+                let message = "ping successful";
+                println!("{}", message);
+                Json(message)
             }),
         );
     server::new(server::Config {
@@ -56,19 +58,13 @@ fn initialise_v1_web_routing(config: &HandlerConfig) -> Axum {
     let version = "v1";
 
     // Create user handler that will acts as the context for users routes.
-    let user_handlers = users::UserHandlers {
+    let user_context = users::UserContext {
         version: version.to_string(),
         user_core: business::core::user::user::new_core(&config.logger, &config.db),
     };
 
-    // Create context for users using Arc.
-    let context = Arc::new(user_handlers);
-
     // Build our router for users.
-    let user_router = axum::Router::new();
-    let user_router = user_router
-        // CORE context for users.
-        .layer(Extension(context))
+    let user_router = axum::Router::new()
         // GET ( /v1/users )
         .route(
             format!("/{}{}", version, "/users").as_str(),
@@ -78,16 +74,17 @@ fn initialise_v1_web_routing(config: &HandlerConfig) -> Axum {
         .route(
             format!("/{}{}", "/v1", "/users/:id").as_str(),
             get(users::v1_get_users_by_id),
-        );
+        )
+        // Create context for users using Arc.
+        .with_state(Arc::new(user_context));
 
     // Here we lastly create our new server, and return to main for it to block the application
     // As stated before, this will be in a seperate thread so we can have multiple senders potentially
     // gracefully shut down the application.
-
     server::new(server::Config {
         web_address: config.web_address.clone(),
         port: config.web_port,
-        router: user_router,
+        router: axum::Router::new().merge(user_router), // Here we merge our routers that contain different context state, and middlewares.
         tracer: String::from(""),
     })
 }

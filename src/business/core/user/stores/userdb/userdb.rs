@@ -1,17 +1,13 @@
 // This is where all logic goes to perform user based database operations.
 
 use sqlx::error::UnexpectedNullError;
-use sqlx::{postgres, FromRow, PgPool, Row};
+use sqlx::PgPool;
 
 use crate::foundation::logger::logger::Logger;
 
-pub struct User {
-    pub email: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub role: String,
-}
+use super::models::User;
 
+#[derive(Clone)]
 pub struct UserStore {
     pub logger: Logger,
     pub db: PgPool,
@@ -24,34 +20,29 @@ pub fn new_store(logger: Logger, db: PgPool) -> UserStore {
     }
 }
 
-pub trait UserDb {
-    fn query_users();
-    fn query_user_by_id();
-    fn insert_new_user();
-}
-
-impl FromRow<'_, postgres::PgRow> for User {
-    fn from_row(row: &postgres::PgRow) -> sqlx::Result<Self> {
-        Ok(Self {
-            email: row.try_get("email")?,
-            first_name: row.try_get("first_name")?,
-            last_name: row.try_get("last_name")?,
-            role: row.try_get("role")?,
+impl UserStore {
+    pub fn query_users(&self) -> Result<User, UnexpectedNullError> {
+        println!("in store!");
+        Ok(User {
+            email: String::from("john.doe@example.com"),
+            first_name: String::from("John"),
+            last_name: String::from("Doe"),
+            role: String::from("user"),
         })
     }
-}
-
-pub fn query_user_by_id(id: u16) -> Result<User, UnexpectedNullError> {
-    match id {
-        0 => Err(UnexpectedNullError),
-        _ => {
-            let user = User {
-                email: String::from("john.doe@example.com"),
-                first_name: String::from("John"),
-                last_name: String::from("Doe"),
-                role: String::from("user"),
-            };
-            Ok(user)
+    pub fn query_user_by_id(&self, id: u16) -> Result<User, UnexpectedNullError> {
+        println!("in store!");
+        match id {
+            0 => Err(UnexpectedNullError),
+            _ => {
+                let user = User {
+                    email: String::from("john.doe@example.com"),
+                    first_name: String::from("John"),
+                    last_name: String::from("Doe"),
+                    role: String::from("user"),
+                };
+                Ok(user)
+            }
         }
     }
 }
