@@ -55,10 +55,11 @@ pub async fn v1_post_user(
         _ => (),
     };
 
-    let result = context
+    context
         .user_core
-        .v1_get_users_by_id()
+        .v1_post_user(user)
+        .await
         .unwrap_or_else(|err| Err(err).unwrap());
 
-    Ok(Json(result))
+    Ok(axum::http::StatusCode::CREATED)
 }

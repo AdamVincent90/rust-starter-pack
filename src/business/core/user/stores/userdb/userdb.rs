@@ -1,7 +1,7 @@
 // This is where all logic goes to perform user based database operations.
 
 use sqlx::error::UnexpectedNullError;
-use sqlx::PgPool;
+use sqlx::{PgPool, QueryBuilder};
 
 use crate::business::core::user::models::V1PostUser;
 use crate::foundation::database;
@@ -51,18 +51,19 @@ impl UserStore {
     pub async fn create_user(&self, user: V1PostUser) -> Result<(), sqlx::Error> {
         println!("in store!");
 
-        let query = "INSERT INTO users(email, first_name, last_name, role) VALUES ($1,$2,$3,$4)";
+        println!("{}", user.email);
 
-        let data = User {
-            email: user.email,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            role: user.role,
-        };
+        // Absolutley disgusting, may need to create a wrapper, or investigate other methods
+        // that allows functions to take in structs or then map/serialise according
+        let mut query = QueryBuilder::new(
+            "INSERT INTO users(email, first_name, last_name, role) VALUES ($1,$2,$3,$4)",
+        );
+        query.push_bind(user.email);
+        query.push_bind(user.first_name);
+        query.push_bind(user.last_name);
+        query.push_bind(user.role);
 
-        println!("{:?}", data.email);
-
-        if let Err(err) = database::database::execute_statement(&self.db, query).await {
+        if let Err(err) = database::database::execute_statement(&self.db, query.sql()).await {
             return Err(err);
         }
 

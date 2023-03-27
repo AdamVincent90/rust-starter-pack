@@ -4,9 +4,12 @@ use sqlx::{error::UnexpectedNullError, PgPool};
 
 use crate::foundation::logger::logger::Logger;
 
-use super::stores::userdb::{
-    models::User,
-    userdb::{self, UserStore},
+use super::{
+    models::V1PostUser,
+    stores::userdb::{
+        models::User,
+        userdb::{self, UserStore},
+    },
 };
 
 #[derive(Clone)]
@@ -39,14 +42,15 @@ impl Core {
         Ok(result)
     }
 
-    pub fn v1_post_user(&self) -> Result<axum::http::StatusCode, UnexpectedNullError> {
+    pub async fn v1_post_user(&self, user: V1PostUser) -> Result<(), UnexpectedNullError> {
         println!("in core!");
-        let result = self.user_store.query_user_by_id(1).unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
+        self.user_store
+            .create_user(user)
+            .await
+            .unwrap_or_else(|err| {
+                return Err(err).unwrap();
+            });
 
-        println!("{}", result.email);
-
-        Ok(axum::http::StatusCode::CREATED)
+        Ok(())
     }
 }

@@ -72,11 +72,11 @@ fn initialise_v1_web_routing(config: &HandlerConfig) -> Axum {
         )
         // GET ( /v1/users/:id )
         .route(
-            format!("/{}{}", "/v1", "/users/:id").as_str(),
+            format!("/{}{}", version, "/users/:id").as_str(),
             get(users::v1_get_user_by_id),
         )
         .route(
-            format!("/{}{}", "/v1", "/users").as_str(),
+            format!("/{}{}", version, "/users").as_str(),
             post(users::v1_post_user),
         )
         // Create context for users using Arc.
