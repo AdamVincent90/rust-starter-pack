@@ -1,34 +1,51 @@
-### Ultimate Rust Service
+### Ultimate Rust Service - Starter Kit
 
-- This is mearly a personal project that aims to use the academical theory of web service application construction from Ardan Labs Ultimate Service to be applied into the Rust programming language.
+This project aims to be a a rust starter kit that will aid developers in making, strong, scalable and consistent web services or tools. This project is inspired by Ardan Labs Ultimate Service that is built using Go. https://github.com/ardanlabs/service
 
-- For reference to the Ardan Labs Ultimate service that is built using Golang -> https://github.com/ardanlabs/service
+Although this project takes lots of inspiration from Ardan Labs Ultimate Service, it is import to understand that different programming languages contain different paradigms, therefore, this starter kit will contain considerations that further utilise Rust.
 
-#### Work In progress
+The Theory for Ardan Labs Ultimate Service is strongly applied to this project, that helps make this starter kit robust. Though language may have difference in opinion, and syntax, the theory is agnostic, which is what makes programming in different languages fun!
 
-- This is very much early doors, lots of research needs to go into identifying the best crates and logic. Other branches will work that will be pushed into main once comfortable and tested.
+#### Quick Start
+
+Prequisites require that you have `rustc` and `cargo` installed on your machine, as well as `docker`.
+
+1. Clone the repo
+2. Cargo Install
+3. run `make run-dev`
+
+This should build a docker network consisting of your rust container running a debug, and web server. A postgres Container for storing your data, and a postgres migrate container that will perform database migrations. The initial migrations will create a `users` table with one user record.
+
+#### Work in Porgress
+
+This project is early in development, and will contain a steady stream of changes going forward, both in terms of Rust knowledge (as I get more accumstomed to the language), research, and overall fixes and design decisions.
 
 #### Theory
 
 Regardless of programming language, like constructed a building. There are 3 main stages of developing a service.
 The below theory will be further discussed in detail in the future.
 
-- The Blueprint (reading, diagramming, discussing, researching technology, documentations)
-- The Scaffold (infrastucture, migrations, metadata, scripts, tooling)
+- The Blueprint (reading material, diagrams, research, documentations, collections)
+- The Scaffold (infrastucture, migrations, metadata, scripts, agnostic tooling)
 - The Src (the actual rust code that underpins your scaffold and blueprints) has 3 sub layers
-  - App (executables rust services, executable rust tooling, rust configuration to get a rust app ready to perform business tasks)
-  - Business (logic the app layer calls to perform a business task for example such as queries to the database, running middleware, performing core business logic for a handler, business models)
-  - Foundation (independant modules that have no context for the given business, for example, database connectivity, logging, and utility modules that aid your rust app and business layer logic)
+  1. App (executables rust services, executable rust tooling, rust configuration to get a rust app ready to perform business tasks)
+  2. Business (logic the app layer calls to perform a business task for example such as queries to the database, running middleware, performing core business logic for a handler, business models)
+  3. Foundation (independant modules that have no context for the given business, for example, database connectivity, logging, and utility modules that aid your rust app and business layer logic)
 
-#### Features this rust starter kit is bundled with
+#### Other Features this rust starter kit will be bundled with.
 
-- Atlas migrations that allows making changes to your database, migrating on new docker containers, that make your migrations suitable for ephemeral containers.
-- Docker development file that uses cargo watch (this is a WIP in order to decrease build times)
-- Docker deployment file that can be used to push your image to a container registry, however this can be edited in a way you see fit.
-- Rust binary service that acts as the main web service, will come with audit logging, middleware, auth, database functionality
-- Location to add tooling and worker binaries that can be used as seperate executables
-- Custom logger, database, web server modules that are ready to be used. (The only thing you would need to do is add your handler and for it to call your custom functions)
-- Make commands to run migrations, spin up docker containers, and other helpers.
-- In the future i want to include a tool binary that creates `core` templates and handlers with a run of a command.
+- Atlas migrations: Allows making changes to your database, keeping a source of truth for your database, and allowing this project to support multiple developers working on the same dataset.
+
+- Docker support: The make commands, development, and deployment files, to quickly spin up your docker network, or to build your image.
+
+- Grpc Support: All configurations and setup you need to create client and server stubs, designed for the purpose of 2 rust starter kits communicating or other grpc services.
+
+- Custom tool: Lumber. This will create Store and Core functions on the fly, so less boilerplate to write!
+
+- Custom worker: That will generate a report for tracking activity.
+
+#### Feedback
 
 Please note, the aim of this project is for it not to be a "libary" or "framework" but a starter kit for people to use that can be built upon, or customised in a way they see fit.
+
+Any feedback is greatly appreciated.
