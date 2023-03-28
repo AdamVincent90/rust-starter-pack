@@ -1,13 +1,9 @@
-// This is where all logic goes to perform user based database operations.
-
-use sqlx::error::UnexpectedNullError;
-use sqlx::{PgPool, QueryBuilder};
-
+use super::models::User;
 use crate::business::core::user::models::V1PostUser;
 use crate::foundation::database;
 use crate::foundation::logger::logger::Logger;
-
-use super::models::User;
+use sqlx::error::UnexpectedNullError;
+use sqlx::{PgPool, Row};
 
 #[derive(Clone)]
 pub struct UserStore {
@@ -15,6 +11,7 @@ pub struct UserStore {
     pub db: PgPool,
 }
 
+// fn new_store() creates a new user store to perform database operations for the entity users.
 pub fn new_store(logger: Logger, db: PgPool) -> UserStore {
     UserStore {
         logger: logger,
@@ -22,48 +19,96 @@ pub fn new_store(logger: Logger, db: PgPool) -> UserStore {
     }
 }
 
+// We only allow these functions to be accesible on the UserStore type.
+// UserStore can have other store related packages within to further flavour our logic.
 impl UserStore {
-    pub fn query_users(&self) -> Result<User, UnexpectedNullError> {
-        println!("in store!");
-        Ok(User {
-            email: String::from("john.doe@example.com"),
-            first_name: String::from("John"),
-            last_name: String::from("Doe"),
-            role: String::from("user"),
-        })
+    // fn query_users() is the store function to query all users from the database.
+    pub async fn query_users(&self) -> Result<Vec<User>, UnexpectedNullError> {
+        // Create our raw query string.
+        let query = "
+        SELECT email, first_name, last_name, role
+        FROM users
+       ";
+
+        // * QueryBuilder can be used here, instead to allow search filters.
+
+        // Provide the statement.
+        let statement = sqlx::query(query);
+
+        // Log query to the console.
+        self.logger
+            .info_w("selecting all users... : query : ", Some(query));
+
+        // Fetch all rows of users by using fn query_many_rows()
+        let rows = database::database::query_many_rows(&self.db, statement)
+            .await
+            .unwrap_or_else(|err| {
+                return Err(err).unwrap();
+            });
+
+        // Map the rows back into our concrete type Vector of User structs.
+        let users = rows
+            .iter()
+            .map(|row| User {
+                email: row.get("email"),
+                first_name: row.get("first_name"),
+                last_name: row.get("last_name"),
+                role: row.get("role"),
+            })
+            .collect();
+
+        Ok(users)
     }
-    pub fn query_user_by_id(&self, id: u16) -> Result<User, UnexpectedNullError> {
-        println!("in store!");
-        match id {
-            0 => Err(UnexpectedNullError),
-            _ => {
-                let user = User {
-                    email: String::from("john.doe@example.com"),
-                    first_name: String::from("John"),
-                    last_name: String::from("Doe"),
-                    role: String::from("user"),
-                };
-                Ok(user)
-            }
-        }
+
+    pub async fn query_user_by_id(&self, id: i16) -> Result<User, sqlx::Error> {
+        // Create our raw query string.
+        let query = "
+        SELECT email, first_name, last_name, role
+        FROM users
+        WHERE id = $1";
+
+        // Provide the statement.
+        let statement = sqlx::query(query).bind(id);
+
+        // Log query to the console.
+        self.logger
+            .info_w("selecting user by id... : query : ", Some(query));
+
+        // Fetch a single row of a user by using fn query_single_row()
+        let row = database::database::query_single_row(&self.db, statement)
+            .await
+            .unwrap_or_else(|err| {
+                return Err(err).unwrap();
+            });
+
+        // Map a single user struct to the returned rows given by the query.
+        Ok(User {
+            email: row.get("email"),
+            first_name: row.get("first_name"),
+            last_name: row.get("last_name"),
+            role: row.get("role"),
+        })
     }
 
     pub async fn create_user(&self, user: V1PostUser) -> Result<(), sqlx::Error> {
-        println!("in store!");
+        // Create our raw query string.
+        let query = "
+        INSERT INTO users(email, first_name, last_name, role)
+        VALUES ($1,$2,$3,$4)";
 
-        println!("{}", user.email);
+        // Provide the statement.
+        let statement = sqlx::query(query)
+            .bind(user.email)
+            .bind(user.first_name)
+            .bind(user.last_name)
+            .bind(user.role);
 
-        // Absolutley disgusting, may need to create a wrapper, or investigate other methods
-        // that allows functions to take in structs or then map/serialise according
-        let mut query = QueryBuilder::new(
-            "INSERT INTO users(email, first_name, last_name, role) VALUES ($1,$2,$3,$4)",
-        );
-        query.push_bind(user.email);
-        query.push_bind(user.first_name);
-        query.push_bind(user.last_name);
-        query.push_bind(user.role);
+        // Log query to the console.
+        self.logger
+            .info_w("creating user... : query : ", Some(query));
 
-        if let Err(err) = database::database::execute_statement(&self.db, query.sql()).await {
+        // Insert a new user record into the database using the mutate_statement()
+        if let Err(err) = database::database::mutate_statement(&self.db, statement).await {
             return Err(err);
         }
 

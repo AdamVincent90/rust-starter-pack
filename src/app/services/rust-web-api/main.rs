@@ -159,7 +159,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     // Finally, we create our new rust app, that passes in all the relevant configurations from start up.
     // Ownership is transferred to new_rust_app.
-    let (web_server, debug_server) = handlers::handlers::new_rust_app(handler_config)
+    let (web_server, debug_server) = handlers::handlers::new_handlers(handler_config)
         .unwrap_or_else(|err| {
             logger.error_w("could not prepare web handlers", Some(&err));
             return Err(err).unwrap();

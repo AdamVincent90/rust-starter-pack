@@ -1,9 +1,3 @@
-// This will be the core business logic to handle a user.
-
-use sqlx::{error::UnexpectedNullError, PgPool};
-
-use crate::foundation::logger::logger::Logger;
-
 use super::{
     models::V1PostUser,
     stores::userdb::{
@@ -11,39 +5,52 @@ use super::{
         userdb::{self, UserStore},
     },
 };
+use crate::foundation::logger::logger::Logger;
+use sqlx::{error::UnexpectedNullError, PgPool};
 
 #[derive(Clone)]
-pub struct Core {
+pub struct UserCore {
     user_store: UserStore,
 }
 
-pub fn new_core(logger: &Logger, db: &PgPool) -> Core {
-    Core {
+// fn new_core() constructs a new core to perform core business logic for users.
+pub fn new_core(logger: &Logger, db: &PgPool) -> UserCore {
+    UserCore {
         user_store: userdb::new_store(logger.clone(), db.clone()),
     }
 }
 
-impl Core {
-    pub fn v1_get_users(&self) -> Result<User, UnexpectedNullError> {
-        println!("in core!");
-        let result = self.user_store.query_user_by_id(1).unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
+// We only allow these functions to be accesible on the UserCore type.
+// User core currently supports UserStore, but as with core functionality
+// There may be an abundance of core packages that can be used,
+// One example can be business/core/user/clients/[grpc, rest] that will allow this core to send requests.
+impl UserCore {
+    // fn v1_get_users() is the core entrypoint to start user business logic for getting all users.
+    pub async fn v1_get_users(&self) -> Result<User, UnexpectedNullError> {
+        let result = self
+            .user_store
+            .query_user_by_id(1)
+            .await
+            .unwrap_or_else(|err| {
+                return Err(err).unwrap();
+            });
 
         Ok(result)
     }
-
-    pub fn v1_get_users_by_id(&self) -> Result<User, UnexpectedNullError> {
-        println!("in core!");
-        let result = self.user_store.query_user_by_id(1).unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
+    // fn v1_get_users_by_id() is the core entrypoint to start user business logic for getting a user by id.
+    pub async fn v1_get_users_by_id(&self) -> Result<User, UnexpectedNullError> {
+        let result = self
+            .user_store
+            .query_user_by_id(1)
+            .await
+            .unwrap_or_else(|err| {
+                return Err(err).unwrap();
+            });
 
         Ok(result)
     }
-
+    // fn v1_post_user() is the core entrypoint to start user business logic for creating a new user.
     pub async fn v1_post_user(&self, user: V1PostUser) -> Result<(), UnexpectedNullError> {
-        println!("in core!");
         self.user_store
             .create_user(user)
             .await

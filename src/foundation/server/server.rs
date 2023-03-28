@@ -70,8 +70,8 @@ impl Axum {
     }
 }
 
-// async fn ping_server() does a ping to the server to validate is liveness.
-pub async fn ping_server(max_attempts: u8) -> Result<(), SendRequestError> {
+// async fn liveness_check() does a ping to the server to validate is liveness.
+pub async fn liveness_check(max_attempts: u8) -> Result<(), SendRequestError> {
     // We use awc as the client to send requests for now.
     let client = awc::Client::default();
 

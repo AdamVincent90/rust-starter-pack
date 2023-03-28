@@ -19,15 +19,13 @@ pub struct HandlerConfig<'a> {
     pub db: postgres::PgPool,
 }
 
-// fn prepare_web_handler() loads and initiates our web server with our app level configurations and logic, ready
-// to perform business level tasks.
-pub fn new_rust_app(config: HandlerConfig) -> Result<(Axum, Axum), axum::Error> {
-    // TODO - Application level stuff
-    // App level middlewares
-    // Debug Axum Server
-    // Web Axum Server
-
-    // Any premade checks and logic before loading our servers.
+// fn new_handlers() creates two isolated web services, a debug service, and web service.
+// Web service acts as the main service that handles incoming requests, and processes them.
+// Debug service acts as the debug server that will contain metrics, and alerting.
+pub fn new_handlers(config: HandlerConfig) -> Result<(Axum, Axum), axum::Error> {
+    // TODO - The below things need to be done before initialising routing.
+    // TODO - App level middlewares added in order to wrap over all routes.
+    // TODO - Anything else that requires before initialising routing.
 
     // Here we add our routes based on version (prefixed)
     let v1_axum = initialise_v1_web_routing(&config);
@@ -35,6 +33,9 @@ pub fn new_rust_app(config: HandlerConfig) -> Result<(Axum, Axum), axum::Error> 
     Ok((v1_axum, debug_axum))
 }
 
+// fn initialise_debug_routing creates our debug routes, for now, this just contains a root path that pings itself.
+// This initial route will help in understanding if the debug service is experiencing any down time.
+// But this service can also provide liveness, and readiness checks for our main web server.
 fn initialise_debug_routing(config: &HandlerConfig) -> Axum {
     let debug_router = axum::Router::new();
     let debug_router = debug_router // We provide a base route to ping.
@@ -54,7 +55,12 @@ fn initialise_debug_routing(config: &HandlerConfig) -> Axum {
     })
 }
 
+// fn initialise_v1_web_routing creates our main web service that contains routes that handle our core business logic.
+// Each routing group has its own context that contains any configs and core packages required to perform operations.
+// This flow helps to segregate our code and to make sure that ownership is brought down the stack in a consistent
+// manner.
 fn initialise_v1_web_routing(config: &HandlerConfig) -> Axum {
+    // The version of our routes.
     let version = "v1";
 
     // Create user handler that will acts as the context for users routes.
@@ -88,7 +94,8 @@ fn initialise_v1_web_routing(config: &HandlerConfig) -> Axum {
     server::new(server::Config {
         web_address: config.web_address.clone(),
         port: config.web_port,
-        router: axum::Router::new().merge(user_router), // Here we merge our routers that contain different context state, and middlewares.
+        // Here we merge our routers that contain different context state, and middlewares.
+        router: axum::Router::new().merge(user_router),
         tracer: String::from(""),
     })
 }

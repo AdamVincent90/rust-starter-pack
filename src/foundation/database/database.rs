@@ -1,10 +1,15 @@
 use std::{thread, time::Duration};
 
 use sqlx::{
-    postgres::{self, PgSslMode},
-    Connection, Executor, PgPool, Statement,
+    postgres::{self, PgArguments, PgRow, PgSslMode},
+    query::Query,
+    Connection, PgPool, Postgres,
 };
 
+// TODO - make a wrapper around functions for transactions.
+// TODO - tidy up, quite a lot of code re-use here.
+
+// Configuration struct to set up database service.
 pub struct Config {
     pub db_host: String,
     pub db_port: u16,
@@ -15,6 +20,7 @@ pub struct Config {
     pub enable_ssl: PgSslMode,
 }
 
+// fn open_postgres_database() opens a new postgres connection pool.
 pub async fn open_postgres_database(config: Config) -> Result<postgres::PgPool, sqlx::Error> {
     let connection_options = postgres::PgConnectOptions::new()
         .database(&config.db_schema)
@@ -37,7 +43,104 @@ pub async fn open_postgres_database(config: Config) -> Result<postgres::PgPool, 
     Ok(postgres_db)
 }
 
-pub async fn ping_postgres_server(
+// fn mutate_statement() creates a transaction to executate a insert or upate statement into the database.
+pub async fn mutate_statement<'a>(
+    db: &PgPool,
+    query: Query<'a, Postgres, PgArguments>,
+) -> Result<u64, sqlx::Error> {
+    // Define a new transaction for this statement, catch any errors.
+    let transaction = match db.begin().await {
+        Ok(transaction) => transaction,
+        Err(err) => return Err(err),
+    };
+
+    // Executate the statement, if there is an issue with the update or insert,
+    // we perform a rollback before return the error back up the stack.
+    let result = match query.execute(db).await {
+        Ok(result) => result,
+        Err(err) => {
+            if let Err(err) = transaction.rollback().await {
+                return Err(err);
+            }
+            return Err(err);
+        }
+    };
+
+    // If there are no errors at this point, we can then commit the transaction.
+    transaction
+        .commit()
+        .await
+        .unwrap_or_else(|err| return Err(err.as_database_error()).unwrap());
+
+    Ok(result.rows_affected())
+}
+
+// fn query_single_row() queries one row from the database.
+pub async fn query_single_row<'a>(
+    db: &PgPool,
+    query: Query<'a, Postgres, PgArguments>,
+) -> Result<PgRow, sqlx::Error> {
+    // Define a new transaction for this statement, catch any errors.
+    let transaction = match db.begin().await {
+        Ok(transaction) => transaction,
+        Err(err) => return Err(err),
+    };
+
+    // Executate the statement, if there is an issue with the update or insert,
+    // we perform a rollback before return the error back up the stack.
+    let result = match query.fetch_one(db).await {
+        Ok(result) => result,
+        Err(err) => {
+            if let Err(err) = transaction.rollback().await {
+                return Err(err);
+            }
+            return Err(err);
+        }
+    };
+
+    // If there are no errors at this point, we can then commit the transaction.
+    transaction
+        .commit()
+        .await
+        .unwrap_or_else(|err| return Err(err.as_database_error()).unwrap());
+
+    Ok(result)
+}
+
+// fn query_single_row() queries many rows from the database.
+pub async fn query_many_rows<'a>(
+    db: &PgPool,
+    query: Query<'a, Postgres, PgArguments>,
+) -> Result<Vec<PgRow>, sqlx::Error> {
+    // Define a new transaction for this statement, catch any errors.
+    let transaction = match db.begin().await {
+        Ok(transaction) => transaction,
+        Err(err) => return Err(err),
+    };
+
+    // Executate the statement, if there is an issue with the update or insert,
+    // we perform a rollback before return the error back up the stack.
+    let result = match query.fetch_all(db).await {
+        Ok(result) => result,
+        Err(err) => {
+            if let Err(err) = transaction.rollback().await {
+                return Err(err);
+            }
+            return Err(err);
+        }
+    };
+
+    // If there are no errors at this point, we can then commit the transaction.
+    transaction
+        .commit()
+        .await
+        .unwrap_or_else(|err| return Err(err.as_database_error()).unwrap());
+
+    Ok(result)
+}
+
+// fn readiness_check() performs a ping to the database, every 5 seconds to see if the connection pool is still alive.
+pub async fn readiness_check(
     db: &sqlx::postgres::PgPool,
     max_attempts: u8,
 ) -> Result<(), sqlx::Error> {
@@ -61,104 +164,6 @@ pub async fn ping_postgres_server(
     if let Err(err) = sqlx::query("SELECT true").fetch_one(db).await {
         return Err(err);
     }
-
-    Ok(())
-}
-
-pub async fn execute_statement(db: &PgPool, query: &str) -> Result<(), sqlx::Error> {
-    // Prepare Query
-    let statement = match db.prepare(&query).await {
-        Ok(statement) => statement,
-        Err(err) => return Err(err),
-    };
-
-    // Log Query
-    // TODO
-    println!("{:?}", statement);
-
-    // Transaction Begin
-    // TODO
-    let transaction = match db.begin().await {
-        Ok(transaction) => transaction,
-        Err(err) => return Err(err),
-    };
-
-    // Execute Query
-    let result = match db.execute(statement.sql()).await {
-        Ok(result) => result,
-        Err(err) => {
-            if let Err(err) = transaction.rollback().await {
-                return Err(err);
-            }
-            return Err(err);
-        }
-    };
-
-    // Commit
-    transaction
-        .commit()
-        .await
-        .unwrap_or_else(|err| return Err(err.as_database_error()).unwrap());
-
-    if result.rows_affected() != 1 {
-        return Err(sqlx::Error::WorkerCrashed);
-    }
-
-    Ok(())
-}
-
-pub async fn query_single_row(db: &PgPool, query: &str) -> Result<(), sqlx::Error> {
-    // Prepare Query
-    let statement = match db.prepare(&query).await {
-        Ok(statement) => statement,
-        Err(err) => return Err(err),
-    };
-
-    // Log Query
-    // TODO
-
-    // Sanitise Query (if required)
-    // TODO
-
-    // Transaction Begin
-    // TODO
-
-    // Execute Query
-    match db.execute(statement.sql()).await {
-        Ok(result) => result,
-        Err(err) => return Err(err), // Rollback
-    };
-
-    // Commit
-    // TODO
-
-    Ok(())
-}
-
-pub async fn query_many_rows(db: &PgPool, query: &str) -> Result<(), sqlx::Error> {
-    // Prepare Query
-    let statement = match db.prepare(&query).await {
-        Ok(statement) => statement,
-        Err(err) => return Err(err),
-    };
-
-    // Log Query
-    // TODO
-
-    // Sanitise Query (if required)
-    // TODO
-
-    // Transaction Begin
-    // TODO
-
-    // Execute Query
-    match db.execute(statement.sql()).await {
-        Ok(result) => result,
-        Err(err) => return Err(err), // Rollback
-    };
-
-    // Commit
-    // TODO
 
     Ok(())
 }
