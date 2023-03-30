@@ -21,8 +21,6 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
 
-    println!("{:?}", args);
-
     if args.len() <= 1 {
         logger.error_w("you must provide command : error ", Some(()));
         exit(1)
