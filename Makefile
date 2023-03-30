@@ -27,6 +27,12 @@ stop-dev:
 		--rmi local
 
 # ==============================================================================
+# Lumber command
+.PHONY: lumber
+lumber:
+	cargo run --bin lumber $(filter-out $@,$(MAKECMDGOALS))
+
+# ==============================================================================
 # DB Migrations
 
 # Creates a new manual migration .sql file in the migrations folder for you to manually add SQL to

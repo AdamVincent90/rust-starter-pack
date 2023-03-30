@@ -44,6 +44,16 @@ The below theory will be further discussed in detail in the future.
 
 - Custom worker: That will generate a report for tracking activity.
 
+### Lumber (WIP: commands are not implemented but the end goal)
+
+Make a core entity: `make lumber core <name> <[modules]>`
+Example on a core entity: `make lumber core user store-db client-grpc client-http` (supported modules will be listed here)
+
+Make a store entity `make lumber store <name> <[options]>`
+Example on a store entity: `make lumber store user db db-cache gcs` (supported modules will be listed here)
+
+More to follow.
+
 #### Feedback
 
 Please note, the aim of this project is for it not to be a "libary" or "framework" but a starter kit for people to use that can be built upon, or customised in a way they see fit.

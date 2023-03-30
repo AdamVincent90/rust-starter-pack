@@ -21,14 +21,16 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
 
+    println!("{:?}", args);
+
     if args.len() <= 1 {
         logger.error_w("you must provide command : error ", Some(()));
         exit(1)
     }
 
     let config_args = ConfigArgs {
-        command: &args[0],
-        name: &args[1],
+        command: &args[1],
+        name: &args[2],
     };
 
     if let Err(err) = run(&logger, config_args) {
