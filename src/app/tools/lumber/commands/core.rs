@@ -2,7 +2,7 @@ use handlebars::handlebars_helper;
 use serde_json;
 use std::env;
 use std::fmt::Error;
-use std::fs::{create_dir, write};
+use std::fs::{create_dir, create_dir_all, write};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -11,8 +11,6 @@ use ultimate_rust_service::foundation::logger::logger::Logger;
 handlebars_helper!(upper: |str: String| str[0..1].to_uppercase() + &str[1..]);
 
 const ALLOWED_OPTIONS: [&str; 2] = ["store", "client"];
-const ALLOWED_STORE_OPTIONS: [&str; 1] = ["db"];
-const ALLOWED_CLIENT_OPTIONS: [&str; 1] = ["grpc"];
 
 const BASE_CORE_PATH: &str = "/src/business/core/";
 
@@ -72,8 +70,11 @@ pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> 
                 for i in parts {
                     match i {
                         "db" => {
-                            let path = format!("{}/stores/{}_db", target_path, name);
-                            create_dir(&path).unwrap_or_else(|err| {
+                            let path = format!(
+                                "{}{}{}/stores/{}_db/",
+                                abs_path, BASE_CORE_PATH, name, name
+                            );
+                            create_dir_all(&path).unwrap_or_else(|err| {
                                 return Err(err).unwrap();
                             });
 
