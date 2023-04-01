@@ -6,11 +6,6 @@ mod commands;
 use log::LevelFilter;
 use ultimate_rust_service::foundation::logger::logger::{self, Config, Logger};
 
-struct ConfigArgs<'a> {
-    command: &'a str,
-    name: &'a str,
-}
-
 fn main() {
     let logger = logger::new_logger(Config {
         name: String::from("LUMBER"),
@@ -26,26 +21,25 @@ fn main() {
         exit(1)
     }
 
-    let config_args = ConfigArgs {
-        command: &args[1],
-        name: &args[2],
-    };
+    let command = &args[1];
+    let name = &args[2];
+    let opts = &args[3..];
 
-    if let Err(err) = run(&logger, config_args) {
+    if let Err(err) = run(&logger, command, name, opts) {
         logger.error_w("error during lumber process : error ", Some(err));
         exit(1)
     }
 }
 
-fn run(logger: &Logger, args: ConfigArgs) -> Result<(), Error> {
-    logger.info_w("intiating selected command : ", Some(args.command));
+fn run(logger: &Logger, command: &str, name: &str, opts: &[String]) -> Result<(), Error> {
+    logger.info_w("intiating selected command : ", Some(command));
 
-    match args.command {
-        "core" => commands::core::create_core(logger, args.command, args.name)
+    match command {
+        "core" => commands::core::create_core(logger, command, name, opts)
             .unwrap_or_else(|err| return Err(err).unwrap()),
-        "store" => commands::store::create_store(logger, args.command, args.name)
+        "store" => commands::store::create_store(logger, command, name)
             .unwrap_or_else(|err| return Err(err).unwrap()),
-        "worker" => commands::worker::create_worker(logger, args.command, args.name)
+        "worker" => commands::worker::create_worker(logger, command, name)
             .unwrap_or_else(|err| return Err(err).unwrap()),
         _ => {}
     }

@@ -1,8 +1,8 @@
 use super::{
     models::V1PostUser,
-    stores::userdb::{
+    stores::user_db::{
         models::User,
-        userdb::{self, UserStore},
+        user_db::{self, UserStore},
     },
 };
 use crate::foundation::logger::logger::Logger;
@@ -16,7 +16,7 @@ pub struct UserCore {
 // fn new_core() constructs a new core to perform core business logic for users.
 pub fn new_core(logger: &Logger, db: &PgPool) -> UserCore {
     UserCore {
-        user_store: userdb::new_store(logger.clone(), db.clone()),
+        user_store: user_db::new_store(logger.clone(), db.clone()),
     }
 }
 
