@@ -7,6 +7,8 @@ use log::LevelFilter;
 use rust_starter_pack::foundation::logger::logger::{self, Config, Logger};
 
 fn main() {
+    env::set_var("RUST_LOG", "debug");
+
     let logger = logger::new_logger(Config {
         name: String::from("LUMBER"),
         max_log_level: LevelFilter::Debug,
@@ -16,7 +18,7 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
 
-    if args.len() <= 1 {
+    if args.len() <= 2 {
         logger.error_w("you must provide command : error ", Some(()));
         exit(1)
     }
@@ -39,9 +41,23 @@ fn run(logger: &Logger, command: &str, name: &str, opts: &[String]) -> Result<()
             .unwrap_or_else(|err| return Err(err).unwrap()),
         "store" => commands::store::create_store(logger, command, name)
             .unwrap_or_else(|err| return Err(err).unwrap()),
-        "worker" => commands::worker::create_worker(logger, command, name)
+        "client" => commands::client::create_client(logger, command, name)
             .unwrap_or_else(|err| return Err(err).unwrap()),
-        _ => {}
+        _ => {
+            logger.error_w("unknown command provided. Please see below.", Some(()));
+            println!("\n");
+            println!("core: Create a core entity: Example: `make lumber core article` ");
+            println!(
+                "core options: store <options> (db): Example `make lumber core article store db` "
+            );
+            println!("core options: client <options> (grpc,http): Example `make lumber core article client http` ");
+            println!("\n");
+            println!("store: Add store functionality to an existing core entity: Example `make lumber store article db`");
+            println!("store options: db");
+            println!("\n");
+            println!("client: Add client functionality to an existing core entity: Example `make lumber client article grpc `");
+            println!("client options: http grpc");
+        }
     }
 
     Ok(())

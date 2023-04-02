@@ -3,14 +3,14 @@ use rust_starter_pack::foundation::logger::logger::Logger;
 use std::fs::{create_dir_all, write};
 use std::{env, fmt::Error, path::PathBuf};
 
-// Potential stores I want this to support out the box. DB (Postgres), Cloud Storage.
+// Potential clients to support out the box. Http (rest) and grpc.
 
 const BASE_CORE_PATH: &str = "/src/business/core/";
 
 handlebars_helper!(upper: |str: String| str[0..1].to_uppercase() + &str[1..]);
 
-pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error> {
-    let message = format!("processing {} with name {}_db", command, name);
+pub fn create_client(log: &Logger, command: &str, name: &str) -> Result<(), Error> {
+    let message = format!("processing {} with name {}_client", command, name);
     log.info_w(&message, Some(()));
 
     // Create a handlebars registry to use templates.
@@ -23,26 +23,29 @@ pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error
     let abs_path = abs_path.to_str().unwrap();
 
     // Store template and target paths
-    let store_template_path = format!(
-        "{}/src/app/tools/lumber/templates/store/db_base.hbs",
+    let client_template_path = format!(
+        "{}/src/app/tools/lumber/templates/client/client_base.hbs",
         abs_path
     );
 
-    let store_mod_path = format!(
-        "{}/src/app/tools/lumber/templates/mods/store_mod_base.hbs",
+    let client_mod_path = format!(
+        "{}/src/app/tools/lumber/templates/mods/client_mod_base.hbs",
         abs_path
     );
 
-    let store_target_path = format!("{}{}{}/stores/{}_db", abs_path, BASE_CORE_PATH, name, name);
+    let store_target_path = format!(
+        "{}{}{}/clients/{}_client",
+        abs_path, BASE_CORE_PATH, name, name
+    );
 
     loader
-        .register_template_file("db_base", store_template_path)
+        .register_template_file("client_base", client_template_path)
         .unwrap_or_else(|err| {
             return Err(err).unwrap();
         });
 
     loader
-        .register_template_file("store_mod_base", store_mod_path)
+        .register_template_file("client_mod_base", client_mod_path)
         .unwrap_or_else(|err| {
             return Err(err).unwrap();
         });
@@ -55,15 +58,18 @@ pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error
         return Err(err).unwrap();
     });
 
-    let template = loader.render("db_base", &data).unwrap_or_else(|err| {
+    let template = loader.render("client_base", &data).unwrap_or_else(|err| {
         return Err(err).unwrap();
     });
 
-    write(format!("{}/{}_db.rs", store_target_path, name), &template)
-        .unwrap_or_else(|err| return Err(err).unwrap());
+    write(
+        format!("{}/{}_client.rs", store_target_path, name),
+        &template,
+    )
+    .unwrap_or_else(|err| return Err(err).unwrap());
 
     let template = loader
-        .render("store_mod_base", &data)
+        .render("client_mod_base", &data)
         .unwrap_or_else(|err| {
             return Err(err).unwrap();
         });

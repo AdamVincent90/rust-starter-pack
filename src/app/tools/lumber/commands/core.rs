@@ -7,6 +7,7 @@ use std::fs::{create_dir, write};
 use std::path::PathBuf;
 use std::process::Command;
 
+use super::client::create_client;
 use super::store::create_store;
 
 // ! This is still programmed in, lots of work to make this clean and less repetitive, and ofcourse, improved.
@@ -37,7 +38,9 @@ pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> 
         Some("grpc") => {
             log.info_w("found grpc option", Some(()));
             // Create core with client
-            render_core_with_client()
+            if let Err(err) = render_core_with_client(log, name) {
+                return Err(err).unwrap();
+            }
         }
         Some("db grpc") => {
             log.info_w("found db and grpc options", Some(()));
@@ -248,6 +251,77 @@ fn render_core_with_store(log: &Logger, name: &str) -> Result<(), Error> {
     Ok(())
 }
 
-fn render_core_with_client() {}
+fn render_core_with_client(log: &Logger, name: &str) -> Result<(), Error> {
+    // Create a handlebars registry to use templates.
+    let mut loader = handlebars::Handlebars::new();
+
+    loader.register_helper("upper", Box::new(upper));
+
+    // Define the absolute path.
+    let abs_path = PathBuf::from(env::current_dir().unwrap());
+    let abs_path = abs_path.to_str().unwrap();
+
+    // Make sure we get the correct template paths
+    let core_template_path = format!(
+        "{}/src/app/tools/lumber/templates/core/core_with_client.hbs",
+        abs_path
+    );
+
+    let core_mod_path = format!(
+        "{}/src/app/tools/lumber/templates/mods/core_mod_client.hbs",
+        abs_path
+    );
+
+    let core_target_path = format!("{}{}{}", abs_path, BASE_CORE_PATH, name);
+
+    // Get all relevant templates
+
+    loader
+        .register_template_file("core_with_client", core_template_path)
+        .unwrap_or_else(|err| {
+            return Err(err).unwrap();
+        });
+
+    loader
+        .register_template_file("core_mod_client", core_mod_path)
+        .unwrap_or_else(|err| {
+            return Err(err).unwrap();
+        });
+
+    let data = serde_json::json!({
+     "name": name,
+    });
+
+    create_dir(&core_target_path).unwrap_or_else(|err| {
+        return Err(err).unwrap();
+    });
+
+    // Now generate the files, shadowing template is fine.
+    let template = loader
+        .render("core_with_client", &data)
+        .unwrap_or_else(|err| {
+            return Err(err).unwrap();
+        });
+
+    write(format!("{}/{}.rs", core_target_path, name), &template)
+        .unwrap_or_else(|err| return Err(err).unwrap());
+
+    let template = loader
+        .render("core_mod_client", &data)
+        .unwrap_or_else(|err| {
+            return Err(err).unwrap();
+        });
+
+    write(format!("{}/mod.rs", core_target_path), &template)
+        .unwrap_or_else(|err| return Err(err).unwrap());
+
+    if let Err(err) = create_client(log, "", name) {
+        return Err(err).unwrap();
+    }
+
+    log.info_w("core with client option rendered", Some(()));
+
+    Ok(())
+}
 
 fn render_core_with_client_and_store() {}

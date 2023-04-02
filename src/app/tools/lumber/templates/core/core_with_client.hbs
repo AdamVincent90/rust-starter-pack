@@ -1,3 +1,4 @@
+use super::clients::article_client::article_client::{new_article_client, ArticleClient};
 use crate::foundation::logger::logger::Logger;
 
 #[derive(Clone)]
@@ -6,9 +7,9 @@ pub struct {{upper name}}Core {
 }
 
 // fn new_{{name}}_core() constructs a new core to perform core business logic for {{name}}s.
-pub fn new_{{name}}_core(logger: &Logger, client: &GrpcClient) -> {{upper name}}Core {
+pub fn new_{{name}}_core(logger: &Logger) -> {{upper name}}Core {
 {{upper name}}Core {
-{{name}}_client: {{name}}db::new_grpc_client(logger.clone(), client.clone()),
+{{name}}_client: new_{{name}}_client(logger.clone()),
 }
 }
 

@@ -1,3 +1,3 @@
+pub mod client;
 pub mod core;
 pub mod store;
-pub mod worker;

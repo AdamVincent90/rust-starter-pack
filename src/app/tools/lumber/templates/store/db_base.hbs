@@ -12,7 +12,7 @@ pub db: PgPool,
 // This can be moved to a models.rs file.
 struct {{upper name}} {}
 
-// fn new_{{name}}_store() creates a new user store to perform database operations for the entity users.
+// fn new_{{name}}_store() creates a new {{name}} store to perform database operations for the entity {{name}}s.
 pub fn new_{{name}}_store(logger: Logger, db: PgPool) -> {{upper name}}Store {
 {{upper name}}Store {
 logger: logger,
@@ -26,16 +26,16 @@ impl {{upper name}}Store {
 
 // ! To implement.
 pub async fn query_{{name}}s(&self) -> Result<Vec<{{upper name}}>, UnexpectedNullError> {
-    Ok(vec![{{upper name}}{}])
-    }
+Ok(vec![{{upper name}}{}])
+}
 
-    // ! To implement.
-    pub async fn query_{{name}}_by_id(&self) -> Result<{{upper name}}, UnexpectedNullError> {
-        Ok({{upper name}}{})
-        }
+// ! To implement.
+pub async fn query_{{name}}_by_id(&self) -> Result<{{upper name}}, UnexpectedNullError> {
+Ok({{upper name}}{})
+}
 
-        // ! To implement.
-        pub async fn create_{{name}}(&self) -> Result<(), UnexpectedNullError> {
-            Ok(())
-            }
-            }
+// ! To implement.
+pub async fn create_{{name}}(&self) -> Result<(), UnexpectedNullError> {
+Ok(())
+}
+}

@@ -1,0 +1,34 @@
+use crate::foundation::logger::logger::Logger;
+use std::io::Error;
+
+#[derive(Clone)]
+pub struct {{upper name}}Client {
+    logger: Logger,
+}
+
+// fn new_{{name}}_client() creates a new {{name}} client to perform database operations for the entity {{name}}s.
+pub fn new_{{name}}_client(logger: Logger) -> {{upper name}}Client {
+{{upper name}}Client {
+logger: logger,
+}
+}
+
+// We only allow these functions to be accesible on the {{upper name}}Client type.
+// {{upper name}}Client can have other store related packages within to further flavour our logic.
+impl {{upper name}}Client {
+
+// ! To implement.
+pub async fn request_all_{{name}}s(&self) -> Result<(), Error> {
+    Ok(())
+}
+
+// ! To implement.
+pub async fn request_one_{{name}}(&self, unique_identifier: i32) -> Result<(), Error> {
+Ok(())
+}
+
+// ! To implement.
+pub async fn create_new_{{name}}(&self) -> Result<(), Error> {
+    Ok(())
+}
+}
