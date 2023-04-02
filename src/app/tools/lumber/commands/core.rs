@@ -27,25 +27,38 @@ pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> 
 
     // we should route logic based on options provided.
     match extract_options(opts) {
-        Some("db") => {
+        Some("store") => {
             log.info_w("found db option", Some(()));
-
             // Create core with store
-            if let Err(err) = render_core_with_store(&log, name) {
+            if let Err(err) = render_core(name, "core_mod_store", "core_with_store") {
+                return Err(err).unwrap();
+            }
+            if let Err(err) = create_store(log, command, name) {
                 return Err(err).unwrap();
             }
         }
-        Some("grpc") => {
+        Some("client") => {
             log.info_w("found grpc option", Some(()));
             // Create core with client
-            if let Err(err) = render_core_with_client(log, name) {
+            if let Err(err) = render_core(name, "core_mod_client", "core_with_client") {
+                return Err(err).unwrap();
+            }
+            if let Err(err) = create_client(log, command, name) {
                 return Err(err).unwrap();
             }
         }
-        Some("db grpc") => {
+        Some("all") => {
             log.info_w("found db and grpc options", Some(()));
             // Create core with client and store
-            render_core_with_client_and_store()
+            if let Err(err) = render_core(name, "core_mod_all", "core_with_all") {
+                return Err(err).unwrap();
+            }
+            if let Err(err) = create_client(log, command, name) {
+                return Err(err).unwrap();
+            }
+            if let Err(err) = create_store(log, command, name) {
+                return Err(err).unwrap();
+            }
         }
         Some(&_) => {
             // Log invalid error
@@ -55,7 +68,7 @@ pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> 
         None => {
             log.info_w("found no additional options", Some(()));
             // No options, so do only the base logic.
-            if let Err(err) = render_core_only(log, name) {
+            if let Err(err) = render_core(name, "core_mod_base", "core_base") {
                 return Err(err).unwrap();
             }
         }
@@ -82,17 +95,10 @@ fn extract_options(opts: &[String]) -> Option<&str> {
         0 => None,
         2 => match opts[0].as_str() {
             "store" => {
-                // This should support more than db in the future.
-                if opts[1] == "db" {
-                    return Some("db");
-                }
-                None
+                return Some("store");
             }
             "client" => {
-                if opts[1] == "grpc" {
-                    return Some("grpc");
-                }
-                None
+                return Some("client");
             }
             _ => None,
         },
@@ -100,10 +106,7 @@ fn extract_options(opts: &[String]) -> Option<&str> {
             if ALLOWED_OPTIONS.contains(&opts[0].as_str())
                 && ALLOWED_OPTIONS.contains(&opts[2].as_str())
             {
-                if (opts[1] == "db" || opts[1] == "grpc") && (opts[2] == "db" || opts[2] == "grpc")
-                {
-                    return Some("db grpc");
-                }
+                return Some("all");
             }
             None
         }
@@ -111,8 +114,7 @@ fn extract_options(opts: &[String]) -> Option<&str> {
     }
 }
 
-// fn render_core_only() renders a simple core entity with no dependencies.
-fn render_core_only(log: &Logger, name: &str) -> Result<(), Error> {
+fn render_core(name: &str, core_mod_name: &str, core_name: &str) -> Result<(), Error> {
     // Create a handlebars registry to use templates.
     let mut loader = handlebars::Handlebars::new();
 
@@ -124,13 +126,13 @@ fn render_core_only(log: &Logger, name: &str) -> Result<(), Error> {
 
     // Make sure we get the correct template paths
     let core_template_path = format!(
-        "{}/src/app/tools/lumber/templates/core/core_base.hbs",
-        abs_path
+        "{}/src/app/tools/lumber/templates/core/{}.hbs",
+        abs_path, core_name
     );
 
     let core_mod_path = format!(
-        "{}/src/app/tools/lumber/templates/mods/core_mod_base.hbs",
-        abs_path
+        "{}/src/app/tools/lumber/templates/mods/{}.hbs",
+        abs_path, core_mod_name,
     );
 
     let core_target_path = format!("{}{}{}", abs_path, BASE_CORE_PATH, name);
@@ -138,13 +140,13 @@ fn render_core_only(log: &Logger, name: &str) -> Result<(), Error> {
     // Get all relevant templates
 
     loader
-        .register_template_file("core_base", core_template_path)
+        .register_template_file(core_name, core_template_path)
         .unwrap_or_else(|err| {
             return Err(err).unwrap();
         });
 
     loader
-        .register_template_file("core_mod_base", core_mod_path)
+        .register_template_file(core_mod_name, core_mod_path)
         .unwrap_or_else(|err| {
             return Err(err).unwrap();
         });
@@ -158,170 +160,19 @@ fn render_core_only(log: &Logger, name: &str) -> Result<(), Error> {
     });
 
     // Now generate the files, shadowing template is fine.
-    let template = loader.render("core_base", &data).unwrap_or_else(|err| {
+    let template = loader.render(core_name, &data).unwrap_or_else(|err| {
         return Err(err).unwrap();
     });
 
     write(format!("{}/{}.rs", core_target_path, name), &template)
         .unwrap_or_else(|err| return Err(err).unwrap());
 
-    let template = loader.render("core_mod_base", &data).unwrap_or_else(|err| {
+    let template = loader.render(core_mod_name, &data).unwrap_or_else(|err| {
         return Err(err).unwrap();
     });
 
     write(format!("{}/mod.rs", core_target_path), &template)
         .unwrap_or_else(|err| return Err(err).unwrap());
 
-    log.info_w("core base rendered", Some(()));
-
     Ok(())
 }
-
-// fn render_core_with_store() creates a core and store for the given name, using the correct mod.rs and templates.
-fn render_core_with_store(log: &Logger, name: &str) -> Result<(), Error> {
-    // Create a handlebars registry to use templates.
-    let mut loader = handlebars::Handlebars::new();
-
-    loader.register_helper("upper", Box::new(upper));
-
-    // Define the absolute path.
-    let abs_path = PathBuf::from(env::current_dir().unwrap());
-    let abs_path = abs_path.to_str().unwrap();
-
-    // Make sure we get the correct template paths
-    let core_template_path = format!(
-        "{}/src/app/tools/lumber/templates/core/core_with_store.hbs",
-        abs_path
-    );
-
-    let core_mod_path = format!(
-        "{}/src/app/tools/lumber/templates/mods/core_mod_store.hbs",
-        abs_path
-    );
-
-    let core_target_path = format!("{}{}{}", abs_path, BASE_CORE_PATH, name);
-
-    // Get all relevant templates
-
-    loader
-        .register_template_file("core_with_store", core_template_path)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    loader
-        .register_template_file("core_mod_store", core_mod_path)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    let data = serde_json::json!({
-     "name": name,
-    });
-
-    create_dir(&core_target_path).unwrap_or_else(|err| {
-        return Err(err).unwrap();
-    });
-
-    // Now generate the files, shadowing template is fine.
-    let template = loader
-        .render("core_with_store", &data)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    write(format!("{}/{}.rs", core_target_path, name), &template)
-        .unwrap_or_else(|err| return Err(err).unwrap());
-
-    let template = loader
-        .render("core_mod_store", &data)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    write(format!("{}/mod.rs", core_target_path), &template)
-        .unwrap_or_else(|err| return Err(err).unwrap());
-
-    if let Err(err) = create_store(log, "", name) {
-        return Err(err).unwrap();
-    }
-
-    log.info_w("core with store option rendered", Some(()));
-
-    Ok(())
-}
-
-fn render_core_with_client(log: &Logger, name: &str) -> Result<(), Error> {
-    // Create a handlebars registry to use templates.
-    let mut loader = handlebars::Handlebars::new();
-
-    loader.register_helper("upper", Box::new(upper));
-
-    // Define the absolute path.
-    let abs_path = PathBuf::from(env::current_dir().unwrap());
-    let abs_path = abs_path.to_str().unwrap();
-
-    // Make sure we get the correct template paths
-    let core_template_path = format!(
-        "{}/src/app/tools/lumber/templates/core/core_with_client.hbs",
-        abs_path
-    );
-
-    let core_mod_path = format!(
-        "{}/src/app/tools/lumber/templates/mods/core_mod_client.hbs",
-        abs_path
-    );
-
-    let core_target_path = format!("{}{}{}", abs_path, BASE_CORE_PATH, name);
-
-    // Get all relevant templates
-
-    loader
-        .register_template_file("core_with_client", core_template_path)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    loader
-        .register_template_file("core_mod_client", core_mod_path)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    let data = serde_json::json!({
-     "name": name,
-    });
-
-    create_dir(&core_target_path).unwrap_or_else(|err| {
-        return Err(err).unwrap();
-    });
-
-    // Now generate the files, shadowing template is fine.
-    let template = loader
-        .render("core_with_client", &data)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    write(format!("{}/{}.rs", core_target_path, name), &template)
-        .unwrap_or_else(|err| return Err(err).unwrap());
-
-    let template = loader
-        .render("core_mod_client", &data)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
-
-    write(format!("{}/mod.rs", core_target_path), &template)
-        .unwrap_or_else(|err| return Err(err).unwrap());
-
-    if let Err(err) = create_client(log, "", name) {
-        return Err(err).unwrap();
-    }
-
-    log.info_w("core with client option rendered", Some(()));
-
-    Ok(())
-}
-
-fn render_core_with_client_and_store() {}
