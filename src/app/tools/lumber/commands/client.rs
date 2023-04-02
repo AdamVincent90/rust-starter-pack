@@ -6,8 +6,6 @@ use std::{env, fmt::Error, path::PathBuf};
 // TODO - Potential clients to support out the box. Http (rest) and grpc.
 // TODO - Also need to clean this function up.
 
-const BASE_CORE_PATH: &str = "/src/business/core/";
-
 handlebars_helper!(upper: |str: String| str[0..1].to_uppercase() + &str[1..]);
 
 pub fn create_client(log: &Logger, command: &str, name: &str) -> Result<(), Error> {
@@ -34,10 +32,8 @@ pub fn create_client(log: &Logger, command: &str, name: &str) -> Result<(), Erro
         abs_path
     );
 
-    let store_target_path = format!(
-        "{}{}{}/clients/{}_client",
-        abs_path, BASE_CORE_PATH, name, name
-    );
+    let ammended_base_path = format!("/src/business/core/{}/clients/", name);
+    let store_target_path = format!("{}{}{}_client", abs_path, ammended_base_path, name);
 
     loader
         .register_template_file("client_base", client_template_path)

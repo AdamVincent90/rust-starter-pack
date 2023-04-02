@@ -6,8 +6,6 @@ use std::{env, fmt::Error, path::PathBuf};
 // TODO - Potential stores I want this to support out the box. DB (Postgres), Cloud Storage.
 // TODO - Also need to clean this function up.
 
-const BASE_CORE_PATH: &str = "/src/business/core/";
-
 handlebars_helper!(upper: |str: String| str[0..1].to_uppercase() + &str[1..]);
 
 pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error> {
@@ -25,7 +23,7 @@ pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error
 
     // Store template and target paths
     let store_template_path = format!(
-        "{}/src/app/tools/lumber/templates/store/db_base.hbs",
+        "{}/src/app/tools/lumber/templates/store/store_base.hbs",
         abs_path
     );
 
@@ -34,10 +32,11 @@ pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error
         abs_path
     );
 
-    let store_target_path = format!("{}{}{}/stores/{}_db", abs_path, BASE_CORE_PATH, name, name);
+    let ammended_base_path = format!("/src/business/core/{}/stores/", name);
+    let store_target_path = format!("{}{}{}_db", abs_path, ammended_base_path, name);
 
     loader
-        .register_template_file("db_base", store_template_path)
+        .register_template_file("store_base", store_template_path)
         .unwrap_or_else(|err| {
             return Err(err).unwrap();
         });
@@ -56,7 +55,7 @@ pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error
         return Err(err).unwrap();
     });
 
-    let template = loader.render("db_base", &data).unwrap_or_else(|err| {
+    let template = loader.render("store_base", &data).unwrap_or_else(|err| {
         return Err(err).unwrap();
     });
 
