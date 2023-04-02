@@ -3,7 +3,8 @@ use rust_starter_pack::foundation::logger::logger::Logger;
 use std::fs::{create_dir_all, write};
 use std::{env, fmt::Error, path::PathBuf};
 
-// Potential stores I want this to support out the box. DB (Postgres), Cloud Storage.
+// TODO - Potential stores I want this to support out the box. DB (Postgres), Cloud Storage.
+// TODO - Also need to clean this function up.
 
 const BASE_CORE_PATH: &str = "/src/business/core/";
 
