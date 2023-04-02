@@ -1,7 +1,7 @@
 use std::io::Error;
 
+use rust_starter_pack::foundation::logger::logger;
 use serde::{de::DeserializeOwned, Deserialize};
-use ultimate_rust_service::foundation::logger::logger;
 
 // Every main.rs executable, in most cases, should have a config for the app, these configs
 // aim to provide the app context to where or what they are performing business logic to, or for.

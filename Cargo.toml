@@ -2,7 +2,7 @@
 # The package details for the given project.
 
 [package]
-name = "ultimate_rust_service"
+name = "rust_starter_pack"
 version = "0.1.0"
 edition = "2021"
 authors = ["Adam Vincent"]

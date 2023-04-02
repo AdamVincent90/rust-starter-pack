@@ -1,4 +1,4 @@
-### Ultimate Rust Service - Starter Kit
+### Rust Starter Pack
 
 This project aims to be a a rust starter kit that will aid developers in making, strong, scalable and consistent web services or tools. This project is inspired by Ardan Labs Ultimate Service that is built using Go. https://github.com/ardanlabs/service
 

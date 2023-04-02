@@ -1,11 +1,11 @@
 use handlebars::handlebars_helper;
+use rust_starter_pack::foundation::logger::logger::Logger;
 use serde_json;
 use std::env;
 use std::fmt::Error;
 use std::fs::{create_dir, write};
 use std::path::PathBuf;
 use std::process::Command;
-use ultimate_rust_service::foundation::logger::logger::Logger;
 
 use super::store::create_store;
 

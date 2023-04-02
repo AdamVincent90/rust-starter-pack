@@ -1442,6 +1442,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
 
 [[package]]
+name = "rust_starter_pack"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "awc",
+ "axum",
+ "axum-macros",
+ "dotenvy",
+ "env_logger",
+ "envy",
+ "handlebars",
+ "log",
+ "serde",
+ "serde_json",
+ "signal-hook",
+ "sqlx",
+ "tokio",
+ "tower",
+ "validator",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2000,28 +2022,6 @@ name = "ucd-trie"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e79c4d996edb816c91e4308506774452e55e95c3c9de07b6729e17e15a5ef81"
-
-[[package]]
-name = "ultimate_rust_service"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "awc",
- "axum",
- "axum-macros",
- "dotenvy",
- "env_logger",
- "envy",
- "handlebars",
- "log",
- "serde",
- "serde_json",
- "signal-hook",
- "sqlx",
- "tokio",
- "tower",
- "validator",
-]
 
 [[package]]
 name = "unicode-bidi"

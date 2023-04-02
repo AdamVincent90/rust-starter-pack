@@ -4,7 +4,7 @@ use std::{env, io::Error, process::exit};
 mod commands;
 
 use log::LevelFilter;
-use ultimate_rust_service::foundation::logger::logger::{self, Config, Logger};
+use rust_starter_pack::foundation::logger::logger::{self, Config, Logger};
 
 fn main() {
     let logger = logger::new_logger(Config {

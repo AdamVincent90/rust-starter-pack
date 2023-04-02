@@ -1,11 +1,11 @@
 use super::versions::version_one::users;
 use axum::routing::{get, post};
 use axum::Json;
+use rust_starter_pack::business;
+use rust_starter_pack::foundation::logger::logger;
+use rust_starter_pack::foundation::server::server::{self, Axum};
 use sqlx::postgres;
 use std::sync::Arc;
-use ultimate_rust_service::business;
-use ultimate_rust_service::foundation::logger::logger;
-use ultimate_rust_service::foundation::server::server::{self, Axum};
 
 // This is where we provide all our packages, and options to prepare our web handler with the relevant
 // features they require to perform business operations.

@@ -1,10 +1,10 @@
 mod config;
 mod handlers;
 
+use rust_starter_pack::foundation::database::database;
+use rust_starter_pack::foundation::logger::logger;
 use signal_hook::consts::SIGTERM;
 use tokio::sync::oneshot;
-use ultimate_rust_service::foundation::database::database;
-use ultimate_rust_service::foundation::logger::logger;
 
 use std::io::Error;
 
