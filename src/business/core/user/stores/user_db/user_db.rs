@@ -1,5 +1,5 @@
-use super::models::User;
-use crate::business::core::user::models::V1PostUser;
+use super::User;
+use crate::business::core::user::V1PostUser;
 use crate::foundation::database;
 use crate::foundation::logger::logger::Logger;
 use sqlx::error::UnexpectedNullError;

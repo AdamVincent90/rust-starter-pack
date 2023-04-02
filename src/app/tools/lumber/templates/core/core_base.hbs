@@ -1,13 +1,13 @@
+use crate::foundation::logger::logger::Logger;
+
 #[derive(Clone)]
 pub struct {{upper name}}Core {
-    {{name}}_store: {{upper name}}Store,
 }
 
 // fn new_{{name}}_core() constructs a new core to perform core business logic for {{name}}s.
-pub fn new_{{name}}_core(logger: &Logger, db: &PgPool) -> UserCore {
-    {{upper name}}Core {
-        {{name}}_store: {{name}}db::new_store(logger.clone(), db.clone()),
-    }
+pub fn new_{{name}}_core(logger: &Logger) -> {{upper name}}Core {
+{{upper name}}Core {
+}
 }
 
 // Implement the core logic for {{name}}s.

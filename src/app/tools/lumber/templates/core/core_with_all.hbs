@@ -1,0 +1,19 @@
+use crate::foundation::logger::logger::Logger;
+use sqlx::{error::UnexpectedNullError, PgPool};
+
+#[derive(Clone)]
+pub struct {{upper name}}Core {
+{{name}}_store: {{upper name}}Store,
+{{name}}_client: {{upper name}}Client,
+}
+
+// fn new_{{name}}_core() constructs a new core to perform core business logic for {{name}}s.
+pub fn new_{{name}}_core(logger: &Logger, db: &PgPool, client: &GrpcClient) -> {{upper name}}Core {
+{{upper name}}Core {
+{{name}}_store: {{name}}db::new_store(logger.clone(), db.clone()),
+{{name}}_client: {{name}}db::new_grpc_client(logger.clone(), client.clone()),
+}
+}
+
+// Implement the core logic for {{name}}s.
+impl {{upper name}}Core {}

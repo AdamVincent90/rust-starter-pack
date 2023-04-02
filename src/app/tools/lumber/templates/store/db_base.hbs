@@ -1,3 +1,8 @@
+use crate::foundation::database;
+use crate::foundation::logger::logger::Logger;
+use sqlx::error::UnexpectedNullError;
+use sqlx::{PgPool, Row};
+
 #[derive(Clone)]
 pub struct {{upper name}}Store {
 pub logger: Logger,
@@ -19,18 +24,18 @@ db: db,
 // {{upper name}}Store can have other store related packages within to further flavour our logic.
 impl {{upper name}}Store {
 
-    // ! To implement.
-    pub async fn query_{{name}}s(&self) -> Result<Vec<{{upper name}}>, UnexpectedNullError> {
-        Ok(())
+// ! To implement.
+pub async fn query_{{name}}s(&self) -> Result<Vec<{{upper name}}>, UnexpectedNullError> {
+    Ok(vec![{{upper name}}{}])
     }
 
     // ! To implement.
     pub async fn query_{{name}}_by_id(&self) -> Result<{{upper name}}, UnexpectedNullError> {
-        Ok(())
-    }
+        Ok({{upper name}}{})
+        }
 
-    // ! To implement.
-    pub async fn create_{{name}}(&self) -> Result<(), UnexpectedNullError> {
-        Ok(())
-    }
-}
+        // ! To implement.
+        pub async fn create_{{name}}(&self) -> Result<(), UnexpectedNullError> {
+            Ok(())
+            }
+            }

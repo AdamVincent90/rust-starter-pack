@@ -1,7 +1,7 @@
 use axum::{extract::State, response::IntoResponse, Json};
 use std::sync::Arc;
 use ultimate_rust_service::business::{
-    self, core::user::models::V1PostUser, system::validation::validation::RequestError,
+    self, core::user::V1PostUser, system::validation::validation::RequestError,
 };
 use validator::Validate;
 

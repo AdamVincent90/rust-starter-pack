@@ -1,9 +1,9 @@
 use super::{
-    models::V1PostUser,
     stores::user_db::{
-        models::User,
         user_db::{self, UserStore},
+        User,
     },
+    V1PostUser,
 };
 use crate::foundation::logger::logger::Logger;
 use sqlx::{error::UnexpectedNullError, PgPool};

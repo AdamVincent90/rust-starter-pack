@@ -52,6 +52,12 @@ Example on a core entity: `make lumber core user store-db client-grpc client-htt
 Make a store entity `make lumber store <name> <[options]>`
 Example on a store entity: `make lumber store user db db-cache gcs` (supported modules will be listed here)
 
+##### Example of how lumber will work
+
+<video style="margin-auto; width: 100%; height: 500px" controls>
+  <source style="width: 100%;" src="./blueprint/demos/lumber/lumber-alpha.mp4" type="video/mp4">
+</video>
+
 More to follow.
 
 #### Feedback
