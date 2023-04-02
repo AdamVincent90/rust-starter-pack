@@ -78,9 +78,17 @@ pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> 
     let mut formatter = Command::new("cargo");
     let formatter = formatter.arg("fmt");
 
-    formatter
-        .spawn()
-        .unwrap_or_else(|err| return Err(err).unwrap());
+    let result = formatter.spawn().unwrap_or_else(|err| {
+        log.warn_w(
+            "generation completed, but unable to format files.",
+            Some(&err),
+        );
+        return Err(err).unwrap();
+    });
+
+    let output = result.wait_with_output().unwrap();
+
+    log.info_w("cargo format finished", Some(output));
 
     log.warn_w("remember to register your new module in lib.rs!", Some(()));
 
