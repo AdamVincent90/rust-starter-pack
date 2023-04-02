@@ -1,6 +1,6 @@
 use crate::foundation::logger::logger::Logger;
 use super::clients::article_client::article_client::{new_article_client, ArticleClient};
-use sqlx::{error::UnexpectedNullError, PgPool};
+use sqlx::PgPool;
 use super::stores::{{name}}_db::{{name}}_db;
 
 #[derive(Clone)]
