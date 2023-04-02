@@ -1,10 +1,9 @@
 // Remove when no longer required.
 #![allow(dead_code)]
 
-use crate::foundation::database;
 use crate::foundation::logger::logger::Logger;
 use sqlx::error::UnexpectedNullError;
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 
 #[derive(Clone)]
 pub struct {{upper name}}Store {
@@ -13,7 +12,7 @@ pub db: PgPool,
 }
 
 // This can be moved to a models.rs file.
-struct {{upper name}} {}
+pub struct {{upper name}} {}
 
 // fn new_{{name}}_store() creates a new {{name}} store to perform database operations for the entity {{name}}s.
 pub fn new_{{name}}_store(logger: Logger, db: PgPool) -> {{upper name}}Store {
