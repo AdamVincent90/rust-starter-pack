@@ -1,4 +1,6 @@
-### Rust Starter Pack
+### Rust Starter Pack (Alpha)
+
+WIP - Please note this is not final and is very much a work in progress, with lots of things to clean and implement.
 
 This project aims to be a a rust starter kit that will aid developers in making, strong, scalable and consistent web services or tools. This project is inspired by Ardan Labs Ultimate Service that is built using Go. https://github.com/ardanlabs/service
 
@@ -54,9 +56,7 @@ Example on a store entity: `make lumber store user db db-cache gcs` (supported m
 
 ##### Example of how lumber will work
 
-
 https://user-images.githubusercontent.com/37915853/229356323-57768d61-b9fe-471c-8e89-aa341d9810d1.mp4
-
 
 More to follow.
 
