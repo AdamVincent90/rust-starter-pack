@@ -23,12 +23,12 @@ pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Error
 
     // Store template and target paths
     let store_template_path = format!(
-        "{}/src/app/tools/lumber/templates/store/store_base.hbs",
+        "{}/src/application/tools/lumber/templates/store/store_base.hbs",
         abs_path
     );
 
     let store_mod_path = format!(
-        "{}/src/app/tools/lumber/templates/mods/store_mod_base.hbs",
+        "{}/src/application/tools/lumber/templates/mods/store_mod_base.hbs",
         abs_path
     );
 

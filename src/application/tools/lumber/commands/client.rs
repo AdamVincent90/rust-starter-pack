@@ -23,12 +23,12 @@ pub fn create_client(log: &Logger, command: &str, name: &str) -> Result<(), Erro
 
     // Store template and target paths
     let client_template_path = format!(
-        "{}/src/app/tools/lumber/templates/client/client_base.hbs",
+        "{}/src/application/tools/lumber/templates/client/client_base.hbs",
         abs_path
     );
 
     let client_mod_path = format!(
-        "{}/src/app/tools/lumber/templates/mods/client_mod_base.hbs",
+        "{}/src/application/tools/lumber/templates/mods/client_mod_base.hbs",
         abs_path
     );
 

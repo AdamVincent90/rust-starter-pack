@@ -134,12 +134,12 @@ fn render_core(name: &str, core_mod_name: &str, core_name: &str) -> Result<(), E
 
     // Make sure we get the correct template paths
     let core_template_path = format!(
-        "{}/src/app/tools/lumber/templates/core/{}.hbs",
+        "{}/src/application/tools/lumber/templates/core/{}.hbs",
         abs_path, core_name
     );
 
     let core_mod_path = format!(
-        "{}/src/app/tools/lumber/templates/mods/{}.hbs",
+        "{}/src/application/tools/lumber/templates/mods/{}.hbs",
         abs_path, core_mod_name,
     );
 
