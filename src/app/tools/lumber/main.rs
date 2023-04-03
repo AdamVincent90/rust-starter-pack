@@ -4,7 +4,7 @@ use std::{env, io::Error, process::exit};
 mod commands;
 
 use log::LevelFilter;
-use rust_starter_pack::foundation::logger::logger::{self, Config, Logger};
+use rust_starter_pack::dependency::logger::logger::{self, Config, Logger};
 
 fn main() {
     env::set_var("RUST_LOG", "debug");

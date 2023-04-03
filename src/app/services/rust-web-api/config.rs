@@ -1,6 +1,6 @@
 use std::io::Error;
 
-use rust_starter_pack::foundation::logger::logger;
+use rust_starter_pack::dependency::logger::logger;
 use serde::{de::DeserializeOwned, Deserialize};
 
 // Every main.rs executable, in most cases, should have a config for the app, these configs

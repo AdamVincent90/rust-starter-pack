@@ -2,8 +2,8 @@ use super::versions::version_one::users;
 use axum::routing::{get, post};
 use axum::Json;
 use rust_starter_pack::business;
-use rust_starter_pack::foundation::logger::logger;
-use rust_starter_pack::foundation::server::server::{self, Axum};
+use rust_starter_pack::dependency::logger::logger;
+use rust_starter_pack::dependency::server::server::{self, Axum};
 use sqlx::postgres;
 use std::sync::Arc;
 

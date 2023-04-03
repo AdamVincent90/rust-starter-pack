@@ -1,8 +1,8 @@
 mod config;
 mod handlers;
 
-use rust_starter_pack::foundation::database::database;
-use rust_starter_pack::foundation::logger::logger;
+use rust_starter_pack::dependency::database::database;
+use rust_starter_pack::dependency::logger::logger;
 use signal_hook::consts::SIGTERM;
 use tokio::sync::oneshot;
 

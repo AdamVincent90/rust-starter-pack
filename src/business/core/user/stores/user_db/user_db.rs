@@ -1,7 +1,7 @@
 use super::User;
 use crate::business::core::user::V1PostUser;
-use crate::foundation::database;
-use crate::foundation::logger::logger::Logger;
+use crate::dependency::database;
+use crate::dependency::logger::logger::Logger;
 use sqlx::error::UnexpectedNullError;
 use sqlx::{PgPool, Row};
 

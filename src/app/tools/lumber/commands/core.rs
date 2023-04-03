@@ -1,5 +1,5 @@
 use handlebars::handlebars_helper;
-use rust_starter_pack::foundation::logger::logger::Logger;
+use rust_starter_pack::dependency::logger::logger::Logger;
 use serde_json;
 use std::env;
 use std::fmt::Error;

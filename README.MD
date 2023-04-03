@@ -32,7 +32,7 @@ The below theory will be further discussed in detail in the future.
 - The Src (the actual rust code that underpins your scaffold and blueprints) has 3 sub layers
   1. App (executables rust services, executable rust tooling, rust configuration to get a rust app ready to perform business tasks)
   2. Business (logic the app layer calls to perform a business task for example such as queries to the database, running middleware, performing core business logic for a handler, business models)
-  3. Foundation (independant modules that have no context for the given business, for example, database connectivity, logging, and utility modules that aid your rust app and business layer logic)
+  3. dependency (independant modules that have no context for the given business, for example, database connectivity, logging, and utility modules that aid your rust app and business layer logic)
 
 #### Other Features this rust starter kit will be bundled with.
 

@@ -5,7 +5,7 @@ use super::{
     },
     V1PostUser,
 };
-use crate::foundation::logger::logger::Logger;
+use crate::dependency::logger::logger::Logger;
 use sqlx::{error::UnexpectedNullError, PgPool};
 
 #[derive(Clone)]
