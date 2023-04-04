@@ -1,6 +1,7 @@
 mod config;
-mod handlers;
+mod mux;
 
+use mux::mux as axum_mux;
 use rust_starter_pack::dependency::database::database;
 use rust_starter_pack::dependency::logger::logger;
 use signal_hook::consts::SIGTERM;
@@ -41,7 +42,7 @@ async fn main() {
     // We now begin the start up function in order to bundle our modules, and setup
     // our services ready to listen to events. We bubble any errors up during our start up
     // sequence in order for them to be handled for our shutdown function.
-    start_up(&log).await.unwrap_or_else(|err| {
+    if let Err(err) = start_up(&log).await {
         // Shut down process to attempt graceful shutdown of our application.
         log.error_w(
             "error during start up sequence, shutting down application gracefully. Error : ",
@@ -51,14 +52,14 @@ async fn main() {
         // Shut down process to attempt graceful shutdown of our application.
         // We use unwrap or else as we want do not return a result from this function,
         // therefore we can use a callack to log the error, and start the shutdown process.
-        shut_down(&log, err).unwrap_or_else(|err| {
+        if let Err(err) = shut_down(&log, err) {
             log.error_w(
                 "error during shutdown process, exiting application. Error : ",
                 Some(err.to_string()),
             );
             std::process::exit(1);
-        })
-    });
+        }
+    };
 }
 
 // fn start_up() performs all related start up configuration to load our service,
@@ -148,7 +149,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     let (web_send, web_recv) = oneshot::channel();
     let (debug_send, debug_recv) = oneshot::channel();
 
-    let handler_config = handlers::handlers::HandlerConfig {
+    let handler_config = axum_mux::MuxConfig {
         web_address: default_config.web.address,
         web_port: default_config.web.port,
         debug_address: default_config.web.debug_address,
@@ -157,26 +158,18 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         db: db,
     };
 
-    // Finally, we create our new rust app, that passes in all the relevant configurations from start up.
+    // Finally, we create our new app, that passes in all the relevant configurations from start up.
     // Ownership is transferred to new_rust_app.
-    let (web_server, debug_server) = handlers::handlers::new_handlers(handler_config)
-        .unwrap_or_else(|err| {
-            logger.error_w("could not prepare web handlers", Some(&err));
-            return Err(err).unwrap();
-        });
-
-    // This will also contain a seperate debug server, serving on a different port and ofcourse thread.
-    web_server.run_sever(web_send).unwrap_or_else(|err| {
-        return Err(err).unwrap();
-    });
+    let (web_server, debug_server) = axum_mux::new_mux(handler_config)?;
 
     // Once we run the server, this will now be ran in a seperate thread, as above, the channel we send will notifiy the below
     // select statement.
-    debug_server.run_sever(debug_send).unwrap_or_else(|err| {
-        return Err(err).unwrap();
-    });
+    web_server.run_sever(web_send)?;
 
-    logger.info_w("axum server loaded", Some(()));
+    // This will also contain a seperate debug server, serving on a different port and ofcourse thread.
+    debug_server.run_sever(debug_send)?;
+
+    logger.info_w("axum servers loaded", Some(()));
 
     // This is where we will block the main thread until one of these signals is received back. Once a signal has been sent
     // From either, our packages, or from sigint, we then attempt to gracefully shutdown the application, if an error occurs

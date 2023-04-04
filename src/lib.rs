@@ -11,6 +11,10 @@ pub mod business {
     pub mod system {
         pub mod validation;
     }
+
+    pub mod web {
+        pub mod middleware;
+    }
 }
 
 pub mod dependency {
