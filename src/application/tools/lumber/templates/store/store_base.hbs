@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 
 use crate::dependency::logger::logger::Logger;
-use sqlx::error::UnexpectedNullError;
+use sqlx::error::Error;
 use sqlx::PgPool;
 
 #[derive(Clone)]
@@ -27,17 +27,17 @@ db: db,
 impl {{upper name}}Store {
 
 // ! To implement.
-pub async fn query_{{name}}s(&self) -> Result<Vec<{{upper name}}>, UnexpectedNullError> {
+pub async fn query_{{name}}s(&self) -> Result<Vec<{{upper name}}>, Error> {
 Ok(vec![{{upper name}}{}])
 }
 
 // ! To implement.
-pub async fn query_{{name}}_by_id(&self) -> Result<{{upper name}}, UnexpectedNullError> {
+pub async fn query_{{name}}_by_id(&self) -> Result<{{upper name}}, Error> {
 Ok({{upper name}}{})
 }
 
 // ! To implement.
-pub async fn create_{{name}}(&self) -> Result<(), UnexpectedNullError> {
+pub async fn create_{{name}}(&self) -> Result<(), Error> {
 Ok(())
 }
 }

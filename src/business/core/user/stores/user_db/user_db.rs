@@ -2,6 +2,7 @@ use super::User;
 use crate::business::core::user::V1PostUser;
 use crate::dependency::database;
 use crate::dependency::logger::logger::Logger;
+use sqlx::error::Error;
 use sqlx::{PgPool, Row};
 
 #[derive(Clone)]
@@ -22,7 +23,7 @@ pub fn new_store(logger: Logger, db: PgPool) -> UserStore {
 // UserStore can have other store related packages within to further flavour our logic.
 impl UserStore {
     // fn query_users() is the store function to query all users from the database.
-    pub async fn query_users(&self) -> Result<Vec<User>, sqlx::error::Error> {
+    pub async fn query_users(&self) -> Result<Vec<User>, Error> {
         // Create our raw query string.
         let query = "
         SELECT email, first_name, last_name, role
