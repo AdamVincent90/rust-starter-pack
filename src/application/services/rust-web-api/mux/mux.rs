@@ -7,9 +7,8 @@ use rust_starter_pack::dependency::logger::logger;
 use rust_starter_pack::dependency::server::server::{self, Axum};
 use sqlx::postgres;
 use std::sync::Arc;
+use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
-use tracing_subscriber::filter::LevelFilter;
-
 // Mux acts as the multiplexer in order to configure and create our services that acts as the main layer
 // For our business logic.
 
@@ -31,29 +30,30 @@ pub struct MuxConfig<'a> {
 pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
     // Firstly, we create our tracing support.
 
-    tracing_subscriber::fmt()
-        .with_max_level(LevelFilter::DEBUG)
-        .init();
+    // TODO - tracing needs to be more granula and contain actual logging.
+    // TODO - this is a placeholder at the moment.
 
     let tracer: Router = Router::new().layer(TraceLayer::new_for_http());
-
-    // Secondly we create our application middlewares.
-    let application_middleware = axum::Router::new()
-        // Logging
-        .layer(middleware::from_fn(web::middleware::logging::logging))
-        // Auditing
-        .layer(middleware::from_fn_with_state(
-            AuditContext {
-                auth: String::from("user"),
-            },
-            web::middleware::audit::audit,
-        ));
 
     // Create V1 route handlers.
     let v1_routes = initialise_v1_web_routing(&config);
 
     // Create Debug route handlers.
     let debug_routes = initialise_debug_routing();
+
+    // Now we create our application middleware to layer around our v1 routes. This will also include other versioned routes.
+    let web_routes = v1_routes.layer(
+        // We use ServiceBuilder as this means that the order of middleware is from top to bottom.
+        ServiceBuilder::new() // Logging
+            .layer(middleware::from_fn(web::middleware::logging::logging))
+            // Auditing
+            .layer(middleware::from_fn_with_state(
+                AuditContext {
+                    auth: String::from("user"),
+                },
+                web::middleware::audit::audit,
+            )),
+    );
 
     // Here we lastly create our new muxes, and then return to main in order to block the application
     // As stated before, this will be in a seperate thread so we can have multiple senders potentially
@@ -62,9 +62,9 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
         web_address: config.web_address.clone(),
         port: config.web_port,
         // Here we merge our versioned routes with our application middleware.
-        router: tracer
-            .clone()
-            .merge(application_middleware.merge(v1_routes)),
+        // It is important to note that route layers (like middleware) need to wrap around routes, so the router
+        // needs to contain the routes before the middleware.
+        router: tracer.clone().merge(web_routes),
     });
 
     let debug_mux = server::new(server::Config {
@@ -114,6 +114,8 @@ fn initialise_v1_web_routing(config: &MuxConfig) -> axum::Router {
         .route("/users", post(users::v1_post_user))
         // Create context for users using Arc.
         .with_state(Arc::new(user_context));
+
+    // * More routes go below
 
     // We return all merged routes here with their own state.
     axum::Router::new().merge(user_router)
