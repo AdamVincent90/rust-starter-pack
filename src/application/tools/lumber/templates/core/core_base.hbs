@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 
 use crate::dependency::logger::logger::Logger;
+use crate::business::system::validation::validation::RequestError;
 
 #[derive(Clone)]
 pub struct {{upper name}}Core {
@@ -14,4 +15,9 @@ pub fn new_{{name}}_core(logger: &Logger) -> {{upper name}}Core {
 }
 
 // Implement the core logic for {{name}}s.
-impl {{upper name}}Core {}
+impl {{upper name}}Core {
+    pub async fn example_{{name}}_function(&self) -> Result<(), RequestError> {
+        // ! Implement me.
+        Ok(())
+    }
+}

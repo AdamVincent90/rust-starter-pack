@@ -1,6 +1,7 @@
 // Remove when no longer required.
 #![allow(dead_code)]
 
+use crate::business::system::validation::validation::RequestError;
 use crate::dependency::logger::logger::Logger;
 use sqlx::PgPool;
 use super::stores::{{name}}_db::{{name}}_db;
@@ -18,4 +19,9 @@ pub fn new_{{name}}_core(logger: &Logger, db: &PgPool) -> {{upper name}}Core {
 }
 
 // Implement the core logic for {{name}}s.
-impl {{upper name}}Core {}
+impl {{upper name}}Core {
+    pub async fn example_{{name}}_function(&self) -> Result<(), RequestError> {
+        // ! Implement me.
+        Ok(())
+        }
+}
