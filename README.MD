@@ -56,7 +56,9 @@ Example on a store entity: `make lumber store user db db-cache gcs` (supported m
 
 ##### Example of how lumber will work
 
-https://user-images.githubusercontent.com/37915853/229356323-57768d61-b9fe-471c-8e89-aa341d9810d1.mp4
+
+https://user-images.githubusercontent.com/37915853/230621229-670591aa-1ccb-494c-80e0-ed4f1fef0ec0.mp4
+
 
 More to follow.
 
