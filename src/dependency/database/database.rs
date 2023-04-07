@@ -67,10 +67,9 @@ pub async fn mutate_statement<'a>(
     };
 
     // If there are no errors at this point, we can then commit the transaction.
-    transaction
-        .commit()
-        .await
-        .unwrap_or_else(|err| return Err(err.as_database_error()).unwrap());
+    if let Err(err) = transaction.commit().await {
+        return Err(err);
+    }
 
     Ok(result.rows_affected())
 }
@@ -99,10 +98,9 @@ pub async fn query_single_row<'a>(
     };
 
     // If there are no errors at this point, we can then commit the transaction.
-    transaction
-        .commit()
-        .await
-        .unwrap_or_else(|err| return Err(err.as_database_error()).unwrap());
+    if let Err(err) = transaction.commit().await {
+        return Err(err);
+    }
 
     Ok(result)
 }
@@ -131,10 +129,9 @@ pub async fn query_many_rows<'a>(
     };
 
     // If there are no errors at this point, we can then commit the transaction.
-    transaction
-        .commit()
-        .await
-        .unwrap_or_else(|err| return Err(err.as_database_error()).unwrap());
+    if let Err(err) = transaction.commit().await {
+        return Err(err);
+    }
 
     Ok(result)
 }

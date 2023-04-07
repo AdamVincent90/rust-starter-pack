@@ -2,7 +2,7 @@ use handlebars::handlebars_helper;
 use rust_starter_pack::dependency::logger::logger::Logger;
 use serde_json;
 use std::env;
-use std::fmt::Error;
+use std::error::Error;
 use std::fs::{create_dir, write};
 use std::path::PathBuf;
 use std::process::Command;
@@ -20,7 +20,12 @@ const ALLOWED_OPTIONS: [&str; 2] = ["store", "client"];
 const BASE_CORE_PATH: &str = "/src/business/core/";
 
 // fn create_core() generates a new core entity using the pre-defined handlebars templates.
-pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> Result<(), Error> {
+pub fn create_core(
+    log: &Logger,
+    command: &str,
+    name: &str,
+    opts: &[String],
+) -> Result<(), Box<dyn Error>> {
     // Log the message
     let message = format!("processing {} with name {}", command, name);
     log.info_w(&message, Some(()));
@@ -31,45 +36,45 @@ pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> 
             log.info_w("found db option", Some(()));
             // Create core with store
             if let Err(err) = render_core(name, "core_mod_store", "core_with_store") {
-                return Err(err).unwrap();
+                return Err(err);
             }
             if let Err(err) = create_store(log, command, name) {
-                return Err(err).unwrap();
+                return Err(err);
             }
         }
         Some("client") => {
             log.info_w("found grpc option", Some(()));
             // Create core with client
             if let Err(err) = render_core(name, "core_mod_client", "core_with_client") {
-                return Err(err).unwrap();
+                return Err(err);
             }
             if let Err(err) = create_client(log, command, name) {
-                return Err(err).unwrap();
+                return Err(err);
             }
         }
         Some("all") => {
             log.info_w("found db and grpc options", Some(()));
             // Create core with client and store
             if let Err(err) = render_core(name, "core_mod_all", "core_with_all") {
-                return Err(err).unwrap();
+                return Err(err);
             }
             if let Err(err) = create_client(log, command, name) {
-                return Err(err).unwrap();
+                return Err(err);
             }
             if let Err(err) = create_store(log, command, name) {
-                return Err(err).unwrap();
+                return Err(err);
             }
         }
         Some(&_) => {
             // Log invalid error
-            log.error_w("invalid option received", Some(()));
-            return Err(()).unwrap();
+            log.error_w("no valid options received, skipping generation.", Some(()));
+            return Ok(());
         }
         None => {
             log.info_w("found no additional options", Some(()));
             // No options, so do only the base logic.
             if let Err(err) = render_core(name, "core_mod_base", "core_base") {
-                return Err(err).unwrap();
+                return Err(err);
             }
         }
     }
@@ -78,15 +83,15 @@ pub fn create_core(log: &Logger, command: &str, name: &str, opts: &[String]) -> 
     let mut formatter = Command::new("cargo");
     let formatter = formatter.arg("fmt");
 
-    let result = formatter.spawn().unwrap_or_else(|err| {
-        log.warn_w(
-            "generation completed, but unable to format files.",
-            Some(&err),
-        );
-        return Err(err).unwrap();
-    });
+    let result = match formatter.spawn() {
+        Ok(result) => result,
+        Err(err) => return Err(Box::new(err)),
+    };
 
-    let output = result.wait_with_output().unwrap();
+    let output = match result.wait_with_output() {
+        Ok(result) => result,
+        Err(err) => return Err(Box::new(err)),
+    };
 
     log.info_w("cargo format finished", Some(output));
 
@@ -122,15 +127,23 @@ fn extract_options(opts: &[String]) -> Option<&str> {
     }
 }
 
-fn render_core(name: &str, core_mod_name: &str, core_name: &str) -> Result<(), Error> {
+fn render_core(name: &str, core_mod_name: &str, core_name: &str) -> Result<(), Box<dyn Error>> {
     // Create a handlebars registry to use templates.
     let mut loader = handlebars::Handlebars::new();
 
     loader.register_helper("upper", Box::new(upper));
 
     // Define the absolute path.
-    let abs_path = PathBuf::from(env::current_dir().unwrap());
-    let abs_path = abs_path.to_str().unwrap();
+    let abs_path = PathBuf::from(match env::current_dir() {
+        Ok(abs_path) => abs_path,
+        Err(err) => {
+            return Err(Box::new(err));
+        }
+    });
+    let abs_path = match abs_path.to_str() {
+        Some(abs_path) => abs_path,
+        None => return Err("could not convert absolute path to string".into()),
+    };
 
     // Make sure we get the correct template paths
     let core_template_path = format!(
@@ -147,40 +160,46 @@ fn render_core(name: &str, core_mod_name: &str, core_name: &str) -> Result<(), E
 
     // Get all relevant templates
 
-    loader
-        .register_template_file(core_name, core_template_path)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
+    match loader.register_template_file(core_name, core_template_path) {
+        Ok(loader) => loader,
+        Err(err) => {
+            return Err(Box::new(err));
+        }
+    }
 
-    loader
-        .register_template_file(core_mod_name, core_mod_path)
-        .unwrap_or_else(|err| {
-            return Err(err).unwrap();
-        });
+    match loader.register_template_file(core_mod_name, core_mod_path) {
+        Ok(loader) => loader,
+        Err(err) => {
+            return Err(Box::new(err));
+        }
+    }
 
     let data = serde_json::json!({
      "name": name,
     });
 
-    create_dir(&core_target_path).unwrap_or_else(|err| {
-        return Err(err).unwrap();
-    });
+    if let Err(err) = create_dir(&core_target_path) {
+        return Err(Box::new(err));
+    }
 
     // Now generate the files, shadowing template is fine.
-    let template = loader.render(core_name, &data).unwrap_or_else(|err| {
-        return Err(err).unwrap();
-    });
+    let template = match loader.render(core_name, &data) {
+        Ok(template) => template,
+        Err(err) => return Err(Box::new(err)),
+    };
 
-    write(format!("{}/{}.rs", core_target_path, name), &template)
-        .unwrap_or_else(|err| return Err(err).unwrap());
+    if let Err(err) = write(format!("{}/{}.rs", core_target_path, name), &template) {
+        return Err(Box::new(err));
+    }
 
-    let template = loader.render(core_mod_name, &data).unwrap_or_else(|err| {
-        return Err(err).unwrap();
-    });
+    let template = match loader.render(core_mod_name, &data) {
+        Ok(template) => template,
+        Err(err) => return Err(Box::new(err)),
+    };
 
-    write(format!("{}/mod.rs", core_target_path), &template)
-        .unwrap_or_else(|err| return Err(err).unwrap());
+    if let Err(err) = write(format!("{}/mod.rs", core_target_path), &template) {
+        return Err(Box::new(err));
+    }
 
     Ok(())
 }

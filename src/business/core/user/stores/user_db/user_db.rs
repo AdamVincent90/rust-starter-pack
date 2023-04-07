@@ -2,7 +2,6 @@ use super::User;
 use crate::business::core::user::V1PostUser;
 use crate::dependency::database;
 use crate::dependency::logger::logger::Logger;
-use sqlx::error::UnexpectedNullError;
 use sqlx::{PgPool, Row};
 
 #[derive(Clone)]
@@ -23,7 +22,7 @@ pub fn new_store(logger: Logger, db: PgPool) -> UserStore {
 // UserStore can have other store related packages within to further flavour our logic.
 impl UserStore {
     // fn query_users() is the store function to query all users from the database.
-    pub async fn query_users(&self) -> Result<Vec<User>, UnexpectedNullError> {
+    pub async fn query_users(&self) -> Result<Vec<User>, sqlx::error::Error> {
         // Create our raw query string.
         let query = "
         SELECT email, first_name, last_name, role
@@ -40,11 +39,10 @@ impl UserStore {
             .info_w("selecting all users... : query : ", Some(query));
 
         // Fetch all rows of users by using fn query_many_rows()
-        let rows = database::database::query_many_rows(&self.db, statement)
-            .await
-            .unwrap_or_else(|err| {
-                return Err(err).unwrap();
-            });
+        let rows = match database::database::query_many_rows(&self.db, statement).await {
+            Ok(rows) => rows,
+            Err(err) => return Err(err),
+        };
 
         // Map the rows back into our concrete type Vector of User structs.
         let users = rows
@@ -75,11 +73,10 @@ impl UserStore {
             .info_w("selecting user by id... : query : ", Some(query));
 
         // Fetch a single row of a user by using fn query_single_row()
-        let row = database::database::query_single_row(&self.db, statement)
-            .await
-            .unwrap_or_else(|err| {
-                return Err(err).unwrap();
-            });
+        let row = match database::database::query_single_row(&self.db, statement).await {
+            Ok(rows) => rows,
+            Err(err) => return Err(err),
+        };
 
         // Map a single user struct to the returned rows given by the query.
         Ok(User {

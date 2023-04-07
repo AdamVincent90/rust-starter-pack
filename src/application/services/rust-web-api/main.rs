@@ -50,7 +50,6 @@ async fn main() {
         );
 
         // Shut down process to attempt graceful shutdown of our application.
-        // We use unwrap or else as we want do not return a result from this function,
         // therefore we can use a callack to log the error, and start the shutdown process.
         if let Err(err) = shut_down(&log, err) {
             log.error_w(

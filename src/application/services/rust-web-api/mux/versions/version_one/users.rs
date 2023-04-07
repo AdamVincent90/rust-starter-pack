@@ -17,25 +17,27 @@ pub struct UserContext {
 // fn v1_get_users() is the main handler for (GET /v1/users)
 pub async fn v1_get_users(State(context): State<Arc<UserContext>>) -> impl IntoResponse {
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    let result = context
-        .user_core
-        .v1_get_users()
-        .await
-        .unwrap_or_else(|err| Err(err).unwrap());
+    let result = match context.user_core.v1_get_users().await {
+        Ok(result) => result,
+        Err(err) => {
+            return Err(err);
+        }
+    };
 
-    Json(result)
+    Ok(Json(result))
 }
 
 // fn v1_get_user_by_id() is the main handler for (GET /v1/users/{id})
 pub async fn v1_get_user_by_id(State(context): State<Arc<UserContext>>) -> impl IntoResponse {
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    let result = context
-        .user_core
-        .v1_get_users_by_id()
-        .await
-        .unwrap_or_else(|err| Err(err).unwrap());
+    let result = match context.user_core.v1_get_users_by_id().await {
+        Ok(result) => result,
+        Err(err) => {
+            return Err(err);
+        }
+    };
 
-    Json(result)
+    Ok(Json(result))
 }
 
 // fn v1_get_user_by_id() is the main handler for (POST /v1/users)
@@ -44,22 +46,17 @@ pub async fn v1_post_user(
     Json(user): Json<V1PostUser>,
 ) -> Result<impl IntoResponse, RequestError> {
     // Before sending off to core logic, for request bodies, we should validate it.
-    match user.validate() {
-        Err(err) => {
-            return Err(RequestError::new(
-                axum::http::StatusCode::BAD_REQUEST,
-                err.to_string(),
-            ))
-        }
-        _ => (),
-    };
+    if let Err(err) = user.validate() {
+        return Err(RequestError::new(
+            axum::http::StatusCode::BAD_REQUEST,
+            err.to_string(),
+        ));
+    }
 
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    context
-        .user_core
-        .v1_post_user(user)
-        .await
-        .unwrap_or_else(|err| Err(err).unwrap());
+    if let Err(err) = context.user_core.v1_post_user(user).await {
+        return Err(err);
+    }
 
     // Here, we simply send back status code 201.
     Ok(axum::http::StatusCode::CREATED)
