@@ -14,7 +14,6 @@ pub struct Axum {
     pub web_address: String,
     pub port: u16,
     pub router: Router,
-    pub tracer: String,
 }
 
 // Configuration struct for our Axum.
@@ -22,7 +21,6 @@ pub struct Config {
     pub web_address: String,
     pub port: u16,
     pub router: Router,
-    pub tracer: String,
 }
 
 // fn new() returns a new Axum struct.
@@ -31,7 +29,6 @@ pub fn new(config: Config) -> Axum {
         web_address: config.web_address,
         port: config.port,
         router: config.router,
-        tracer: config.tracer,
     }
 }
 

@@ -9,6 +9,7 @@ pub mod business {
     }
 
     pub mod system {
+        pub mod auth;
         pub mod validation;
     }
 

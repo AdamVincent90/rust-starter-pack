@@ -59,7 +59,7 @@ impl UserStore {
         Ok(users)
     }
 
-    pub async fn query_user_by_id(&self, id: i16) -> Result<User, sqlx::Error> {
+    pub async fn query_user_by_id(&self, id: i32) -> Result<User, sqlx::Error> {
         // Create our raw query string.
         let query = "
         SELECT email, first_name, last_name, role

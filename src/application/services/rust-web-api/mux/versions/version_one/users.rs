@@ -1,4 +1,8 @@
-use axum::{extract::State, response::IntoResponse, Json};
+use axum::{
+    extract::{Path, State},
+    response::IntoResponse,
+    Json,
+};
 use rust_starter_pack::business::{
     self, core::user::V1PostUser, system::validation::validation::RequestError,
 };
@@ -28,9 +32,12 @@ pub async fn v1_get_users(State(context): State<Arc<UserContext>>) -> impl IntoR
 }
 
 // fn v1_get_user_by_id() is the main handler for (GET /v1/users/{id})
-pub async fn v1_get_user_by_id(State(context): State<Arc<UserContext>>) -> impl IntoResponse {
+pub async fn v1_get_user_by_id(
+    State(context): State<Arc<UserContext>>,
+    Path(id): Path<i32>,
+) -> impl IntoResponse {
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    let result = match context.user_core.v1_get_users_by_id().await {
+    let result = match context.user_core.v1_get_users_by_id(id).await {
         Ok(result) => result,
         Err(err) => {
             return Err(err);

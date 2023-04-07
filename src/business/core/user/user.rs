@@ -41,8 +41,8 @@ impl UserCore {
         Ok(result)
     }
     // fn v1_get_users_by_id() is the core entrypoint to start user business logic for getting a user by id.
-    pub async fn v1_get_users_by_id(&self) -> Result<User, RequestError> {
-        let result = match self.user_store.query_user_by_id(1).await {
+    pub async fn v1_get_users_by_id(&self, id: i32) -> Result<User, RequestError> {
+        let result = match self.user_store.query_user_by_id(id).await {
             Ok(result) => result,
             Err(err) => {
                 return Err(RequestError::new(
