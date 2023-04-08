@@ -79,11 +79,11 @@ table "audit_logs" {
   }
   column "request_uuid" {
     null = true
-    type = uuid
+    type = character_varying(36)
   }
   column "status_code" {
     null = true
-    type = integer
+    type = character_varying(3)
   }
   column "created_at" {
     null    = false

@@ -1,7 +1,7 @@
+use crate::{business::system::validation::validation::RequestError, dependency::database};
+use axum::http::header;
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
 use sqlx::PgPool;
-
-use crate::{business::system::validation::validation::RequestError, dependency::database};
 
 // AuditContext contains all the state required to succefully audit a request.
 #[derive(Clone)]
@@ -20,35 +20,36 @@ pub async fn audit<B>(
     // Extract request headers
     let headers = request.headers().clone();
 
-    let response = next.run(request).await;
-
-    // Post Handler Logic
-
     // Extract request params to store into the audit logs table.
 
     // Host
-    let host = headers
-        .get(axum::http::header::HOST)
-        .and_then(|val| val.to_str().ok());
-    // Path
-    let path = headers
-        .get(axum::http::header::REFERER)
-        .and_then(|val| val.to_str().ok());
+    let host = headers.get(header::HOST).and_then(|val| val.to_str().ok());
     // User Agent
     let user_agent = headers
-        .get(axum::http::header::USER_AGENT)
+        .get(header::USER_AGENT)
         .and_then(|val| val.to_str().ok());
     // IP Address
+    // ! ( Only used for logging for potential threats, never use for ill purposes!!!!! )
     let ip_address = headers
-        .get(axum::http::header::FORWARDED)
+        .get("X-Forwarded-For")
         .and_then(|val| val.to_str().ok());
     // Uuid
+    // This should be done during tracing and used across everywhere. Not generated here.
     let request_uuid = uuid::Uuid::new_v4();
+    // Path
+    let path = request.uri().to_string();
+
+    // We await the response for other data.
+
+    let response = next.run(request).await;
+
+    // Post Handler Logic;
+
     // Status code
     let status_code = response.status();
 
     let query = "
-    INSERT INTO audit_log (user_agent, web_path, host_address, origin_ip_address, request_uuid, status_code)
+    INSERT INTO audit_logs (user_agent, web_path, host_address, origin_ip_address, request_uuid, status_code)
     VALUES($1, $2, $3, $4, $5, $6);
     ";
 
@@ -57,8 +58,8 @@ pub async fn audit<B>(
         .bind(path)
         .bind(host)
         .bind(ip_address)
-        .bind(request_uuid.to_string())
-        .bind(status_code.as_str());
+        .bind(request_uuid.as_hyphenated().to_string())
+        .bind(format!("{}", status_code.as_u16()));
 
     // Insert a new user record into the database using the mutate_statement()
     if let Err(err) = database::database::mutate_statement(&context.db, statement).await {
