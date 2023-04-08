@@ -2,6 +2,7 @@ use super::versions::version_one::users;
 use axum::routing::{get, post};
 use axum::{middleware, Json, Router};
 use rust_starter_pack::business::web::middleware::audit::AuditContext;
+use rust_starter_pack::business::web::middleware::logging::LoggingContext;
 use rust_starter_pack::business::{self, web};
 use rust_starter_pack::dependency::logger::logger;
 use rust_starter_pack::dependency::server::server::{self, Axum};
@@ -44,13 +45,17 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
     // Now we create our application middleware to layer around our v1 routes. This will also include other versioned routes.
     let web_routes = v1_routes.layer(
         // We use ServiceBuilder as this means that the order of middleware is from top to bottom.
-        ServiceBuilder::new() // Logging
-            .layer(middleware::from_fn(web::middleware::logging::logging))
+        ServiceBuilder::new()
+            // Logging
+            .layer(middleware::from_fn_with_state(
+                LoggingContext {
+                    log: config.logger.clone(),
+                },
+                web::middleware::logging::logging,
+            ))
             // Auditing
             .layer(middleware::from_fn_with_state(
-                AuditContext {
-                    auth: String::from("user"),
-                },
+                AuditContext { db: config.db },
                 web::middleware::audit::audit,
             )),
     );

@@ -5,7 +5,6 @@ use std::{
 
 use awc::error::SendRequestError;
 use axum::Router;
-use signal_hook::low_level::exit;
 use tokio::sync::oneshot::Sender;
 
 #[derive(Clone)]
@@ -40,10 +39,10 @@ impl Axum {
         // We want to initialise a tracer (This could be run in a seperate thread on a seperate server)
 
         // Attempt to parse string of loopback address to u8.
-        let host = IpAddr::from_str(&self.web_address).unwrap_or_else(|err| {
-            println!("{}", err);
-            exit(1);
-        });
+        let host = match IpAddr::from_str(&self.web_address) {
+            Ok(host) => host,
+            Err(err) => return Err(Box::new(err)),
+        };
 
         // Create a new socket.
         let socket_address = SocketAddr::new(host, self.port);
@@ -65,27 +64,30 @@ impl Axum {
 
         Ok(())
     }
-}
 
-// async fn liveness_check() does a ping to the server to validate is liveness.
-pub async fn liveness_check(max_attempts: u8) -> Result<(), SendRequestError> {
-    // We use awc as the client to send requests for now.
-    let client = awc::Client::default();
+    // async fn liveness_check() does a ping to the server to validate is liveness.
+    pub async fn liveness_check(&self, max_attempts: u8) -> Result<(), SendRequestError> {
+        // We use awc as the client to send requests for now.
+        let client = awc::Client::default();
 
-    // Based on the number of attempts provided, we keep pinging the server until this limit is reached
-    // Once it has, we return an error.
-    for i in 1..=max_attempts {
-        match client.get("http://127.0.0.1:4080").send().await {
-            Ok(_) => {
-                break;
-            }
-            Err(err) => {
-                if i == max_attempts {
-                    return Err(err);
+        // Merge host and port.
+        let full_address = format!("{}:{}", self.web_address, self.port.to_string());
+
+        // Based on the number of attempts provided, we keep pinging the server until this limit is reached
+        // Once it has, we return an error.
+        for i in 1..=max_attempts {
+            match client.get(full_address.as_str()).send().await {
+                Ok(_) => {
+                    break;
                 }
-            }
-        };
-    }
+                Err(err) => {
+                    if i == max_attempts {
+                        return Err(err);
+                    }
+                }
+            };
+        }
 
-    Ok(())
+        Ok(())
+    }
 }

@@ -55,6 +55,45 @@ table "atlas_schema_revisions" {
     columns = [column.version]
   }
 }
+table "audit_logs" {
+  schema = schema.public
+  column "id" {
+    null = false
+    type = serial
+  }
+  column "user_agent" {
+    null = true
+    type = character_varying(255)
+  }
+  column "web_path" {
+    null = true
+    type = character_varying(50)
+  }
+  column "host_address" {
+    null = true
+    type = character_varying(30)
+  }
+  column "origin_ip_address" {
+    null = true
+    type = character_varying(30)
+  }
+  column "request_uuid" {
+    null = true
+    type = uuid
+  }
+  column "status_code" {
+    null = true
+    type = integer
+  }
+  column "created_at" {
+    null    = false
+    type    = timestamp
+    default = sql("now()")
+  }
+  primary_key {
+    columns = [column.id]
+  }
+}
 table "users" {
   schema = schema.public
   column "id" {

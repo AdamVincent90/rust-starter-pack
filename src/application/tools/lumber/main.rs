@@ -1,5 +1,5 @@
 // Lumber will be an eventual tool that will create store and core functions with a simple command.
-use std::{env, io::Error, process::exit};
+use std::{env, error::Error, process::exit};
 
 mod commands;
 
@@ -33,16 +33,26 @@ fn main() {
     }
 }
 
-fn run(logger: &Logger, command: &str, name: &str, opts: &[String]) -> Result<(), Error> {
+fn run(logger: &Logger, command: &str, name: &str, opts: &[String]) -> Result<(), Box<dyn Error>> {
     logger.info_w("intiating selected command : ", Some(command));
 
     match command {
-        "core" => commands::core::create_core(logger, command, name, opts)
-            .unwrap_or_else(|err| return Err(err).unwrap()),
-        "store" => commands::store::create_store(logger, command, name)
-            .unwrap_or_else(|err| return Err(err).unwrap()),
-        "client" => commands::client::create_client(logger, command, name)
-            .unwrap_or_else(|err| return Err(err).unwrap()),
+        "core" => {
+            if let Err(err) = commands::core::create_core(logger, command, name, opts) {
+                return Err(err);
+            }
+        }
+        "store" => {
+            if let Err(err) = commands::store::create_store(logger, command, name) {
+                return Err(err);
+            }
+        }
+        "client" => {
+            if let Err(err) = commands::client::create_client(logger, command, name) {
+                return Err(err);
+            }
+        }
+
         _ => {
             logger.error_w("unknown command provided. Please see below.", Some(()));
             println!("\n");
