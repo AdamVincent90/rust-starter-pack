@@ -2,6 +2,7 @@ use super::versions::version_one::users;
 use axum::routing::{get, post};
 use axum::{middleware, Json, Router};
 use rust_starter_pack::business::web::middleware::audit::AuditContext;
+use rust_starter_pack::business::web::middleware::error::ErrorContext;
 use rust_starter_pack::business::web::middleware::logging::LoggingContext;
 use rust_starter_pack::business::{self, web};
 use rust_starter_pack::dependency::logger::logger;
@@ -46,17 +47,24 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
     let web_routes = v1_routes.layer(
         // We use ServiceBuilder as this means that the order of middleware is from top to bottom.
         ServiceBuilder::new()
-            // Logging
+            // * Logging
             .layer(middleware::from_fn_with_state(
                 LoggingContext {
                     log: config.logger.clone(),
                 },
                 web::middleware::logging::logging,
             ))
-            // Auditing
+            // * Auditing
             .layer(middleware::from_fn_with_state(
                 AuditContext { db: config.db },
                 web::middleware::audit::audit,
+            ))
+            // * Error handling
+            .layer(middleware::from_fn_with_state(
+                ErrorContext {
+                    log: config.logger.clone(),
+                },
+                web::middleware::error::error,
             )),
     );
 
@@ -111,13 +119,13 @@ fn initialise_v1_web_routing(config: &MuxConfig) -> axum::Router {
 
     // Build our router for users.
     let user_router = axum::Router::new()
-        // GET ( /v1/users )
+        // * GET ( /v1/users )
         .route("/v1/users", get(users::v1_get_users))
-        // GET ( /v1/users/:id )
+        // * GET ( /v1/users/:id )
         .route("/v1/users/:id", get(users::v1_get_user_by_id))
-        // POST ( /v1/users )
+        // * POST ( /v1/users )
         .route("/users", post(users::v1_post_user))
-        // Create context for users using Arc.
+        // * Create context for users using Arc.
         .with_state(Arc::new(user_context));
 
     // * More routes go below

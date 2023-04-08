@@ -1,6 +1,7 @@
 use crate::{business::system::validation::validation::RequestError, dependency::database};
 use axum::http::header;
-use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
+use axum::response::IntoResponse;
+use axum::{extract::State, http::Request, middleware::Next};
 use sqlx::PgPool;
 
 // AuditContext contains all the state required to succefully audit a request.
@@ -14,7 +15,7 @@ pub async fn audit<B>(
     State(context): State<AuditContext>,
     request: Request<B>,
     next: Next<B>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, RequestError> {
     // Pre Handler Logic
 
     // Extract request headers
@@ -22,30 +23,29 @@ pub async fn audit<B>(
 
     // Extract request params to store into the audit logs table.
 
-    // Host
+    // * Host
     let host = headers.get(header::HOST).and_then(|val| val.to_str().ok());
-    // User Agent
+    // * User Agent
     let user_agent = headers
         .get(header::USER_AGENT)
         .and_then(|val| val.to_str().ok());
-    // IP Address
+    // * IP Address
     // ! ( Only used for logging for potential threats, never use for ill purposes!!!!! )
     let ip_address = headers
         .get("X-Forwarded-For")
         .and_then(|val| val.to_str().ok());
-    // Uuid
-    // This should be done during tracing and used across everywhere. Not generated here.
+    // * Uuid (This should be done during tracing and used across everywhere. Not generated here).
     let request_uuid = uuid::Uuid::new_v4();
-    // Path
+    // * Path
     let path = request.uri().to_string();
 
     // We await the response for other data.
 
     let response = next.run(request).await;
 
-    // Post Handler Logic;
+    // Post Handler Logic
 
-    // Status code
+    // * Status code
     let status_code = response.status();
 
     let query = "

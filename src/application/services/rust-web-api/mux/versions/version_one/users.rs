@@ -19,7 +19,9 @@ pub struct UserContext {
 // * Any errors returned from handler functions, will be caught and then processed in middleware.
 
 // fn v1_get_users() is the main handler for (GET /v1/users)
-pub async fn v1_get_users(State(context): State<Arc<UserContext>>) -> impl IntoResponse {
+pub async fn v1_get_users(
+    State(context): State<Arc<UserContext>>,
+) -> Result<impl IntoResponse, RequestError> {
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
     let result = match context.user_core.v1_get_users().await {
         Ok(result) => result,
@@ -35,7 +37,7 @@ pub async fn v1_get_users(State(context): State<Arc<UserContext>>) -> impl IntoR
 pub async fn v1_get_user_by_id(
     State(context): State<Arc<UserContext>>,
     Path(id): Path<i32>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, RequestError> {
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
     let result = match context.user_core.v1_get_users_by_id(id).await {
         Ok(result) => result,

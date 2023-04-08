@@ -1,6 +1,8 @@
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
 
-use crate::dependency::logger::logger::Logger;
+use crate::{
+    business::system::validation::validation::RequestError, dependency::logger::logger::Logger,
+};
 
 // AuditContext contains all the state required to succefully audit a request.
 #[derive(Clone)]
@@ -12,7 +14,7 @@ pub async fn logging<B>(
     State(context): State<LoggingContext>,
     request: Request<B>,
     next: Next<B>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, RequestError> {
     // Pre Handler Logic
 
     let request_message = format!(
@@ -31,5 +33,5 @@ pub async fn logging<B>(
 
     context.log.info_w(&response_message, Some(()));
 
-    response
+    Ok(response)
 }
