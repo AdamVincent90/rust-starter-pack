@@ -7,11 +7,10 @@ use log::LevelFilter;
 use rust_starter_pack::dependency::logger::logger::{self, Config, Logger};
 
 fn main() {
-    env::set_var("RUST_LOG", "debug");
-
+    env::set_var("RUST_LOG", "info");
     let logger = logger::new_logger(Config {
         name: String::from("LUMBER"),
-        max_log_level: LevelFilter::Debug,
+        max_log_level: LevelFilter::Info,
     });
 
     logger.info_w("starting lumber tool", None);
