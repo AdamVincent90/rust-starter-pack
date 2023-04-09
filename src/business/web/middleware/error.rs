@@ -1,8 +1,6 @@
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
 
-use crate::{
-    business::system::validation::validation::RequestError, dependency::logger::logger::Logger,
-};
+use crate::{business::system::error::error::RequestError, dependency::logger::logger::Logger};
 
 #[derive(Clone)]
 pub struct ErrorContext {
@@ -18,12 +16,14 @@ pub async fn error<B>(
 
     let response = next.run(request).await;
 
-    let status = response.status().as_u16();
+    let status = response.status();
 
-    match status {
+    match status.as_u16() {
         200..=299 => Ok(response),
         _ => {
             // We know its an error now so we can properly decode the body to return the messages we want too.
+
+            let status = response.status();
 
             let data = match hyper::body::to_bytes(response.into_body()).await {
                 Ok(data) => data,
@@ -31,10 +31,7 @@ pub async fn error<B>(
                     context
                         .log
                         .error_w("could not convert to bytes in error middleware", Some(err));
-                    return Err(RequestError::new(
-                        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                        "Internal Server Error",
-                    ));
+                    return Err(RequestError::new_internal_server_error());
                 }
             };
 
@@ -44,10 +41,7 @@ pub async fn error<B>(
                     context
                         .log
                         .error_w("could no read bytes in error middleware ", Some(err));
-                    return Err(RequestError::new(
-                        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                        "Internal Server Error",
-                    ));
+                    return Err(RequestError::new_internal_server_error());
                 }
             };
 
@@ -56,18 +50,12 @@ pub async fn error<B>(
 
             // We only return the bytes if the status code is 400-499.
 
-            match status {
+            match status.as_u16() {
                 400..=499 => {
-                    return Err(RequestError::new(
-                        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                        data.to_string(),
-                    ));
+                    return Err(RequestError::new(status, data.to_string()));
                 }
                 _ => {
-                    return Err(RequestError::new(
-                        axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                        "Internal Server Error",
-                    ));
+                    return Err(RequestError::new_internal_server_error());
                 }
             }
         }

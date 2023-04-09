@@ -4,7 +4,7 @@ use axum::{
     Json,
 };
 use rust_starter_pack::business::{
-    self, core::user::V1PostUser, system::validation::validation::RequestError,
+    self, core::user::V1PostUser, system::error::error::RequestError,
 };
 use std::sync::Arc;
 use validator::Validate;

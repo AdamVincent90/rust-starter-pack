@@ -1,8 +1,6 @@
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
 
-use crate::{
-    business::system::validation::validation::RequestError, dependency::logger::logger::Logger,
-};
+use crate::{business::system::error::error::RequestError, dependency::logger::logger::Logger};
 
 // AuditContext contains all the state required to succefully audit a request.
 #[derive(Clone)]

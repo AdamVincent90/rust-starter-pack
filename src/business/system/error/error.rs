@@ -16,6 +16,12 @@ impl RequestError {
             message: message.into(),
         }
     }
+    pub fn new_internal_server_error() -> Self {
+        Self {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            message: String::from("Internal Server Error"),
+        }
+    }
 }
 
 impl IntoResponse for RequestError {

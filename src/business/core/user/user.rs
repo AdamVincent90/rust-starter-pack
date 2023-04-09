@@ -5,7 +5,7 @@ use super::{
     },
     V1PostUser,
 };
-use crate::business::system::validation::validation::RequestError;
+use crate::business::system::error::error::RequestError;
 use crate::dependency::logger::logger::Logger;
 use sqlx::PgPool;
 
