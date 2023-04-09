@@ -16,13 +16,13 @@ pub struct Config {
 impl Logger {
     // Custom INFO log that formats to JSON.
     pub fn info_w(&self, message: &str, origin: Option<&str>) {
-        let output = self.to_json(message, origin, "WARN").to_string();
-        log::error!("\n\x1b[32m{}\x1b[32m", output);
+        let output = self.to_json(message, origin, "INFO").to_string();
+        log::info!("\n\x1b[32m{}\x1b[32m", output);
     }
     // Custom WARNING log that formats to JSON.
     pub fn warn_w(&self, message: &str, origin: Option<&str>) {
         let output = self.to_json(message, origin, "WARN").to_string();
-        log::error!("\n\x1b[33m{}\x1b[33m", output);
+        log::warn!("\n\x1b[33m{}\x1b[33m", output);
     }
     // Custom ERROR log that formats to JSON.
     pub fn error_w(&self, error_message: &str, origin: Option<&str>) {
