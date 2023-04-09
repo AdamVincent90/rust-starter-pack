@@ -124,7 +124,7 @@ fn initialise_v1_web_routing(config: &MuxConfig) -> axum::Router {
         // * GET ( /v1/users/:id )
         .route("/v1/users/:id", get(users::v1_get_user_by_id))
         // * POST ( /v1/users )
-        .route("/users", post(users::v1_post_user))
+        .route("/v1/users", post(users::v1_post_user))
         // * Create context for users using Arc.
         .with_state(Arc::new(user_context));
 

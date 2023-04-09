@@ -28,12 +28,12 @@ pub fn create_core(
 ) -> Result<(), Box<dyn Error>> {
     // Log the message
     let message = format!("processing {} with name {}", command, name);
-    log.info_w(&message, Some(()));
+    log.info_w(&message, Some("Lumber Create Core"));
 
     // we should route logic based on options provided.
     match extract_options(opts) {
         Some("store") => {
-            log.info_w("found db option", Some(()));
+            log.info_w("found db option", Some("Lumber Create Core"));
             // Create core with store
             if let Err(err) = render_core(name, "core_mod_store", "core_with_store") {
                 return Err(err);
@@ -43,7 +43,7 @@ pub fn create_core(
             }
         }
         Some("client") => {
-            log.info_w("found grpc option", Some(()));
+            log.info_w("found grpc option", Some("Lumber Create Core"));
             // Create core with client
             if let Err(err) = render_core(name, "core_mod_client", "core_with_client") {
                 return Err(err);
@@ -53,7 +53,7 @@ pub fn create_core(
             }
         }
         Some("all") => {
-            log.info_w("found db and grpc options", Some(()));
+            log.info_w("found db and grpc options", Some("Lumber Create Core"));
             // Create core with client and store
             if let Err(err) = render_core(name, "core_mod_all", "core_with_all") {
                 return Err(err);
@@ -67,11 +67,14 @@ pub fn create_core(
         }
         Some(&_) => {
             // Log invalid error
-            log.error_w("no valid options received, skipping generation.", Some(()));
+            log.error_w(
+                "no valid options received, skipping generation.",
+                Some("Lumber Create Core"),
+            );
             return Ok(());
         }
         None => {
-            log.info_w("found no additional options", Some(()));
+            log.info_w("found no additional options", Some("Lumber Create Core"));
             // No options, so do only the base logic.
             if let Err(err) = render_core(name, "core_mod_base", "core_base") {
                 return Err(err);
@@ -93,9 +96,15 @@ pub fn create_core(
         Err(err) => return Err(Box::new(err)),
     };
 
-    log.info_w("cargo format finished", Some(output));
+    log.info_w(
+        format!("cargo format finished, status {}", output.status).as_str(),
+        Some("Lumber Create Core"),
+    );
 
-    log.warn_w("remember to register your new module in lib.rs!", Some(()));
+    log.warn_w(
+        "remember to register your new module in lib.rs!",
+        Some("Lumber Create Core"),
+    );
 
     Ok(())
 }

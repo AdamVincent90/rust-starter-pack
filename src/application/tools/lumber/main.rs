@@ -14,12 +14,12 @@ fn main() {
         max_log_level: LevelFilter::Debug,
     });
 
-    logger.info_w("starting lumber tool", Some(()));
+    logger.info_w("starting lumber tool", None);
 
     let args: Vec<String> = env::args().collect();
 
     if args.len() <= 2 {
-        logger.error_w("you must provide command : error ", Some(()));
+        logger.error_w("not enough arguments", Some("Lumber Main"));
         exit(1)
     }
 
@@ -28,7 +28,10 @@ fn main() {
     let opts = &args[3..];
 
     if let Err(err) = run(&logger, command, name, opts) {
-        logger.error_w("error during lumber process : error ", Some(err));
+        logger.error_w(
+            format!("error found : {}", err.to_string()).as_str(),
+            Some("Lumber Main"),
+        );
         exit(1)
     }
 }
@@ -54,7 +57,7 @@ fn run(logger: &Logger, command: &str, name: &str, opts: &[String]) -> Result<()
         }
 
         _ => {
-            logger.error_w("unknown command provided. Please see below.", Some(()));
+            logger.error_w("unknown command provided. Please see below.", None);
             println!("\n");
             println!("core: Create a core entity: Example: `make lumber core article` ");
             println!(

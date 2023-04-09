@@ -11,7 +11,7 @@ handlebars_helper!(upper: |str: String| str[0..1].to_uppercase() + &str[1..]);
 
 pub fn create_client(log: &Logger, command: &str, name: &str) -> Result<(), Box<dyn Error>> {
     let message = format!("processing {} with name {}_client", command, name);
-    log.info_w(&message, Some(()));
+    log.info_w(&message, Some("Lumber Create Client"));
 
     // Create a handlebars registry to use templates.
     let mut loader = handlebars::Handlebars::new();

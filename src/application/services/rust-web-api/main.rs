@@ -37,7 +37,7 @@ async fn main() {
     // Logger configuration to allow this application to create our custom logger.
     let log = logger::new_logger(logger_config);
 
-    log.info_w("STARTING RUST SERVICE", Some(()));
+    log.info_w("STARTING RUST SERVICE", Some("RUST WEB API MAIN"));
 
     // We now begin the start up function in order to bundle our modules, and setup
     // our services ready to listen to events. We bubble any errors up during our start up
@@ -45,16 +45,24 @@ async fn main() {
     if let Err(err) = start_up(&log).await {
         // Shut down process to attempt graceful shutdown of our application.
         log.error_w(
-            "error during start up sequence, shutting down application gracefully. Error : ",
-            Some(err.to_string()),
+            format!(
+                "error during start up sequence, shutting down application gracefully. Error : {}",
+                err.to_string()
+            )
+            .as_str(),
+            Some("RUST WEB API MAIN"),
         );
 
         // Shut down process to attempt graceful shutdown of our application.
         // therefore we can use a callack to log the error, and start the shutdown process.
         if let Err(err) = shut_down(&log, err) {
             log.error_w(
-                "error during shutdown process, exiting application. Error : ",
-                Some(err.to_string()),
+                format!(
+                    "error during shutdown process, exiting application. Error : {}",
+                    err.to_string()
+                )
+                .as_str(),
+                Some("RUST WEB API MAIN"),
             );
             std::process::exit(1);
         }
@@ -111,7 +119,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         }
     };
 
-    logger.info_w("postgres database loaded", Some(()));
+    logger.info_w("postgres database loaded", Some("Rust Web API Start Up"));
 
     // Now all custom modules have been loaded, we can now start creating threads for our web server, signals, and any other
     // threads we would like to add.
@@ -168,14 +176,14 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     // This will also contain a seperate debug server, serving on a different port and ofcourse thread.
     debug_server.run_sever(debug_send)?;
 
-    logger.info_w("axum servers loaded", Some(()));
+    logger.info_w("axum servers loaded", Some("Rust Web API Start Up"));
 
     // This is where we will block the main thread until one of these signals is received back. Once a signal has been sent
     // From either, our packages, or from sigint, we then attempt to gracefully shutdown the application, if an error occurs
     // from then, we will attempt to shutdown the program ungracefully, and then a solution to stop these should be implemented.
     tokio::select! {
             val = web_recv => {
-                logger.info_w("signal received from web server, starting graceful shutdown", Some(()));
+                logger.info_w("signal received from web server, starting graceful shutdown", Some("Rust Web API Start Up"));
                 match val {
                     Ok(_) => {
                         return Ok(());
@@ -186,7 +194,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
                 };
             },
             val = debug_recv => {
-                logger.info_w("signal received from debug server, starting graceful shutdown", Some(()));
+                logger.info_w("signal received from debug server, starting graceful shutdown", Some("Rust Web API Start Up"));
                 match val {
                     Ok(_) => {
                         return Ok(());
@@ -197,7 +205,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
                 };
             },
             val = signal_receive => {
-              logger.info_w("signal received from sigint, starting graceful shutdown", Some(()));
+              logger.info_w("signal received from sigint, starting graceful shutdown", Some("Rust Web API Start Up"));
                 match val {
                     Ok(_) => {
                         return Ok(());
@@ -214,8 +222,12 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 fn shut_down(logger: &logger::Logger, err: Box<dyn std::error::Error>) -> Result<(), Error> {
     // We currently just log here to notify we are about to start the shut down process.
     logger.info_w(
-        "attempting graceful shutdown of servic : reason ",
-        Some(err),
+        format!(
+            "attempting graceful shutdown of service : reason {}",
+            err.to_string()
+        )
+        .as_str(),
+        Some("Rust Web API Shut Down"),
     );
 
     // We currently just return OK. But this is where we will make sure to stop threads, workers

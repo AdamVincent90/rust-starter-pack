@@ -21,7 +21,9 @@ pub async fn logging<B>(
         request.uri()
     );
 
-    context.log.info_w(&request_message, Some(()));
+    context
+        .log
+        .info_w(&request_message, Some("Logging Middleware"));
 
     let response = next.run(request).await;
 
@@ -29,7 +31,9 @@ pub async fn logging<B>(
 
     let response_message = format!("response received: STATUS: {}", response.status().as_str());
 
-    context.log.info_w(&response_message, Some(()));
+    context
+        .log
+        .info_w(&response_message, Some("Logging Middleware"));
 
     Ok(response)
 }

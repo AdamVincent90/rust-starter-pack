@@ -28,9 +28,10 @@ pub async fn error<B>(
             let data = match hyper::body::to_bytes(response.into_body()).await {
                 Ok(data) => data,
                 Err(err) => {
-                    context
-                        .log
-                        .error_w("could not convert to bytes in error middleware", Some(err));
+                    context.log.error_w(
+                        format!("could not convert to bytes : error {}", err.to_string()).as_str(),
+                        Some("Error Middleware"),
+                    );
                     return Err(RequestError::new_internal_server_error());
                 }
             };
@@ -38,15 +39,18 @@ pub async fn error<B>(
             let data = match std::str::from_utf8(&data) {
                 Ok(data) => data,
                 Err(err) => {
-                    context
-                        .log
-                        .error_w("could no read bytes in error middleware ", Some(err));
+                    context.log.error_w(
+                        format!("could no read bytes : error {}", err.to_string()).as_str(),
+                        Some("Error Middleware"),
+                    );
                     return Err(RequestError::new_internal_server_error());
                 }
             };
 
             // We can now log the error message to the console, so we know the reason for the 500 error, but the user does not.
-            context.log.warn_w(&data.to_string(), Some(()));
+            context
+                .log
+                .warn_w(&data.to_string(), Some("Error Middleware"));
 
             // We only return the bytes if the status code is 400-499.
 

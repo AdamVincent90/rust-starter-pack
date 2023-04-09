@@ -1,60 +1,55 @@
 use env_logger;
 use log;
-use std::fmt::Debug;
 
-// To clean up and improve.
-
+// A simple custom JSON logger, that is used across the project.
 #[derive(Clone)]
 pub struct Logger {
     name: String,
 }
 
+// Configuration to set the name and max logging level for a given logger.
 pub struct Config {
     pub name: String,
     pub max_log_level: log::LevelFilter,
 }
 
-impl Debug for Logger {
-    fn fmt<'a>(&self, f: &mut std::fmt::Formatter<'a>) -> std::fmt::Result {
-        f.debug_struct("Logger").field("name", &self.name).finish()
-    }
-}
-
 impl Logger {
-    pub fn info_w<T: Debug>(&self, message: &str, args: Option<T>) {
-        log::info!(
-            "\n\x1b[32mlogger name: {} || logger info message : {} || args : {:?}\x1b[32m\n",
-            self.name,
-            message,
-            args
-        )
+    // Custom INFO log that formats to JSON.
+    pub fn info_w(&self, message: &str, origin: Option<&str>) {
+        let output = self.to_json(message, origin, "WARN").to_string();
+        log::error!("\n\x1b[32m{}\x1b[32m", output);
     }
-
-    pub fn warn_w<T: Debug>(&self, message: &str, args: Option<T>) {
-        log::warn!(
-            "\n\x1b[33mlogger name: {} || logger warn message : {} || args : {:?}\x1b[33m\n",
-            self.name,
-            message,
-            args
-        )
+    // Custom WARNING log that formats to JSON.
+    pub fn warn_w(&self, message: &str, origin: Option<&str>) {
+        let output = self.to_json(message, origin, "WARN").to_string();
+        log::error!("\n\x1b[33m{}\x1b[33m", output);
     }
-
-    pub fn error_w<T: Debug>(&self, message: &str, args: Option<T>) {
-        log::error!(
-            "\n\x1b[91;1mlogger name: {} || logger error message : {} || args : {:?}\x1b[91;1m\n",
-            self.name,
-            message,
-            args
-        )
+    // Custom ERROR log that formats to JSON.
+    pub fn error_w(&self, error_message: &str, origin: Option<&str>) {
+        let output = self.to_json(error_message, origin, "ERROR").to_string();
+        log::error!("\n\x1b[91;1m{}\x1b[91;1m", output)
     }
+    // Custom DEBUG log that formats to JSON.
+    pub fn debug_w(&self, message: &str, origin: Option<&str>) {
+        let output = self.to_json(message, origin, "DEBUG").to_string();
+        log::debug!("\n\x1b[34m{}\x1b[34m", output)
+    }
+    // fn to_json() passes in the logging arguments, and formats into more readable, and a log that can be serialised.
+    fn to_json(
+        &self,
+        log_message: &str,
+        origin: Option<&str>,
+        level: &str,
+    ) -> serde_json::value::Value {
+        let origin = match origin {
+            Some(origin) => origin,
+            None => "No Origin Specified.",
+        };
 
-    pub fn debug_w<T: Debug>(&self, message: &str, args: Option<T>) {
-        log::debug!(
-            "\n\x1b[34mlogger name: {} || logger debug message : {} || args : {:?}\x1b[34m\n",
-            self.name,
-            message,
-            args
-        )
+        let message_key = format!("{}_message", level.to_lowercase());
+
+        serde_json::json!(
+            {"origin": Some(origin), message_key: log_message, "logger_name": self.name, "level": level.to_uppercase()})
     }
 }
 

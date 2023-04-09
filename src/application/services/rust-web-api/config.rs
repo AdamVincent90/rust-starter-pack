@@ -59,8 +59,12 @@ pub trait Conf: DeserializeOwned {
         // Configuration for this particular struct.
         if let Err(err) = dotenvy::dotenv() {
             logger.warn_w(
-                "failed to load .env file, reverting to default : reason",
-                Some(err),
+                format!(
+                    "failed to load .env file, reverting to default : reason {}",
+                    err.to_string()
+                )
+                .as_str(),
+                Some("Rust Web API Start Up"),
             );
             return Ok(self);
         }
@@ -79,8 +83,12 @@ pub trait Conf: DeserializeOwned {
             .from_env::<Self>()
             .unwrap_or_else(|err| {
                 logger.warn_w(
-                    "Could not load settings from env, reverting to default : reason :",
-                    Some(err),
+                    format!(
+                        "Could not load settings from env. reverting to default : reason {}",
+                        err.to_string()
+                    )
+                    .as_str(),
+                    Some("Rust Web API Main Config"),
                 );
                 return self;
             });
