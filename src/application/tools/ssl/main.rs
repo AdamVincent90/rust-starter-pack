@@ -12,7 +12,7 @@ const RSA_BITS: u32 = 4096;
 fn main() {
     env::set_var("RUST_LOG", "info");
     let logger = logger::new_logger(logger::Config {
-        name: String::from("LUMBER"),
+        name: String::from("OPENSSL-GEN"),
         max_log_level: LevelFilter::Info,
     });
 
