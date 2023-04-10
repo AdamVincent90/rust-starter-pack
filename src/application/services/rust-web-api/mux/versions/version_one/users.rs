@@ -23,7 +23,7 @@ pub async fn v1_get_users(
     State(context): State<Arc<UserContext>>,
 ) -> Result<impl IntoResponse, RequestError> {
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    let result = match context.user_core.v1_get_users().await {
+    let result = match context.user_core.get_all().await {
         Ok(result) => result,
         Err(err) => {
             return Err(err);
@@ -39,7 +39,7 @@ pub async fn v1_get_user_by_id(
     Path(id): Path<i32>,
 ) -> Result<impl IntoResponse, RequestError> {
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    let result = match context.user_core.v1_get_users_by_id(id).await {
+    let result = match context.user_core.get_by_id(id).await {
         Ok(result) => result,
         Err(err) => {
             return Err(err);
@@ -63,7 +63,7 @@ pub async fn v1_post_user(
     }
 
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    if let Err(err) = context.user_core.v1_post_user(user).await {
+    if let Err(err) = context.user_core.create(user).await {
         return Err(err);
     }
 
