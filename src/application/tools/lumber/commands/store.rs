@@ -25,11 +25,11 @@ pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Box<d
             return Err(Box::new(err));
         }
     });
+
     let abs_path = match abs_path.to_str() {
         Some(abs_path) => abs_path,
         None => return Err("could not convert absolute path to string".into()),
     };
-    ();
 
     // Store template and target paths
     let store_template_path = format!(

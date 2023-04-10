@@ -6,6 +6,9 @@
 rust-web-api:
 	cargo run --bin rust-web-api
 
+rsa-keypair:
+	cargo run --bin ssl
+
 # ==============================================================================
 # Docker Compose
 

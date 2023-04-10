@@ -20,6 +20,10 @@ path = "src/application/services/rust-web-api/main.rs"
 name = "lumber"
 path = "src/application/tools/lumber/main.rs"
 
+[[bin]]
+name = "ssl"
+path = "src/application/tools/ssl/main.rs"
+
 # # cargo run --bin scheduled-worker
 [[bin]]
 name = "scheduled-worker"
@@ -49,3 +53,4 @@ jsonwebtoken = "8"
 tower-http = { version = "0.4.0", features = ["trace"] }
 uuid = { version = "1.3.0", features = ["v4"] }
 hyper = "0.14.25"
+openssl = "0.10.50"

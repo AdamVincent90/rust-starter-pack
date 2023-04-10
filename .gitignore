@@ -33,3 +33,4 @@ vendor/
 
 # Build Cache
 stash/
+scaffold/certs/*.pem
