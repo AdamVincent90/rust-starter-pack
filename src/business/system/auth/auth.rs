@@ -1,6 +1,11 @@
 // Remove when no longer required.
 #![allow(dead_code, unused)]
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    env, fs,
+    io::Read,
+    path::PathBuf,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use jsonwebtoken::{self, Algorithm, EncodingKey};
 use serde::{Deserialize, Serialize};
@@ -61,7 +66,31 @@ impl Auth {
             Algorithm::RS256 => {
                 let mut alg = jsonwebtoken::Header::default();
                 alg.alg = Algorithm::RS256;
-                let key = match EncodingKey::from_rsa_pem("pem".as_bytes()) {
+
+                let abs_path = PathBuf::from(match env::current_dir() {
+                    Ok(abs_path) => abs_path,
+                    Err(err) => {
+                        return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+                    }
+                });
+
+                let abs_path = match abs_path.to_str() {
+                    Some(abs_path) => abs_path,
+                    None => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+                };
+
+                let key_path = format!("{}/scaffold/certs/private.pem", abs_path);
+                let mut key_file = match fs::File::open("path/to/your/file.pem") {
+                    Ok(key_file) => key_file,
+                    Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+                };
+                let mut buf = String::new();
+                let key_file = match key_file.read_to_string(&mut buf) {
+                    Ok(buf) => buf,
+                    Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+                };
+
+                let key = match EncodingKey::from_rsa_pem(buf.as_bytes()) {
                     Ok(key) => key,
                     Err(_) => {
                         return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
