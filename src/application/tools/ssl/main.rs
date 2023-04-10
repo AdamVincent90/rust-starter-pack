@@ -1,11 +1,10 @@
-use std::env;
-use std::fs::{create_dir_all, write};
-use std::path::PathBuf;
-
 use log::LevelFilter;
 use openssl::rsa::Rsa;
 use rust_starter_pack::dependency::logger::logger;
 use rust_starter_pack::dependency::logger::logger::Logger;
+use std::env;
+use std::fs::{create_dir_all, write};
+use std::path::PathBuf;
 
 const RSA_BITS: u32 = 4096;
 

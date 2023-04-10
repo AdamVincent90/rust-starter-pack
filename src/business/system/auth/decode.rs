@@ -21,10 +21,12 @@ pub fn validate_token(
     // We then use that decoding key on the incoming token to validate its legitimacy, if so, then we map the token
     // to the claims.
     let data: TokenData<StandardClaims> =
-        match jsonwebtoken::decode(&token, &key, &Validation::new(Algorithm::RS256)) {
+        match jsonwebtoken::decode(&token, &key, &Validation::new(signing_method)) {
             Ok(data) => data,
             Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
         };
+
+    // Sign the JWT below.
 
     Ok(data)
 }

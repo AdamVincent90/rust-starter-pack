@@ -9,12 +9,14 @@ pub struct Auth {
     pub key_id: String,
     pub signing_method: Algorithm,
     pub user_store: UserStore,
+    pub claims: StandardClaims,
 }
 
 // The configuration when creating a new auth instance.
 pub struct AuthConfig {
     pub key_id: String,
     pub signing_method: Algorithm,
+    pub user_store: UserStore,
 }
 
 // The struct that contains all standard claims common within a JWT.
@@ -65,7 +67,11 @@ impl Auth {
     }
 
     // pub fn authorise() checks the claims to verify if they contain the information we would like them to contain.
-    pub fn authorise(claims: StandardClaims, roles: Option<Vec<String>>) -> Result<(), StatusCode> {
+    pub fn authorise(
+        &self,
+        claims: &StandardClaims,
+        roles: Option<Vec<String>>,
+    ) -> Result<(), StatusCode> {
         // Very Basic for now.
 
         let list = match roles {
