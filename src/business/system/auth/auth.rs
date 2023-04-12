@@ -56,7 +56,7 @@ impl Auth {
 
     // pub fn authenticate() Decodes and validates the incoming token, and if successful, maps and returns the claims.
     pub fn authenticate(&self, token: String) -> Result<TokenData<StandardClaims>, StatusCode> {
-        let data = match decode::validate_token(token, self.signing_method) {
+        let data = match decode::validate_token(self.key_id.clone(), token, self.signing_method) {
             Ok(data) => data,
             Err(err) => return Err(err),
         };

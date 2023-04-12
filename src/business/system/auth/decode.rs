@@ -10,10 +10,11 @@ use super::auth::StandardClaims;
 // If the JWT is not valid, or the public key is incorrect, then we simply return an error.
 pub fn validate_token(
     token: String,
+    key_id: String,
     signing_method: Algorithm,
 ) -> Result<TokenData<StandardClaims>, axum::http::StatusCode> {
     // We obtain the relevant decoding key (private.pem for RSA256 etc)
-    let key = match load_decoding_key(signing_method) {
+    let key = match load_decoding_key(&key_id, signing_method) {
         Ok(key) => key,
         Err(err) => return Err(err),
     };
@@ -30,7 +31,10 @@ pub fn validate_token(
 }
 
 // fn load_decoding_key() loads the correct public key or secret based on the signing method passed in.
-fn load_decoding_key(signing_method: Algorithm) -> Result<DecodingKey, hyper::StatusCode> {
+fn load_decoding_key(
+    key_id: &str,
+    signing_method: Algorithm,
+) -> Result<DecodingKey, hyper::StatusCode> {
     // Based on the signing method, we load a different key for our project.
     let key = match signing_method {
         Algorithm::HS256 => DecodingKey::from_secret("secret".as_bytes()),
@@ -48,8 +52,10 @@ fn load_decoding_key(signing_method: Algorithm) -> Result<DecodingKey, hyper::St
                 None => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
             };
 
+            let public_key_name = format!("public-{}.pem", key_id);
+
             // We get the key location.
-            let key_path = format!("{}/scaffold/certs/public.pem", abs_path);
+            let key_path = format!("{}/scaffold/certs/{}", abs_path, public_key_name);
             let mut key_file = match fs::File::open(key_path) {
                 Ok(key_file) => key_file,
                 Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),

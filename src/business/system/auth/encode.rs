@@ -16,7 +16,7 @@ pub async fn encode_token(
     signing_method: Algorithm,
 ) -> Result<String, axum::http::StatusCode> {
     // Load the correct encoding key based on the encoding algorithm provided.
-    let (mut header, key) = match load_encoding_key(signing_method) {
+    let (mut header, key) = match load_encoding_key(&key_id, signing_method) {
         Ok((header, key)) => (header, key),
         Err(err) => return Err(err),
     };
@@ -34,7 +34,7 @@ pub async fn encode_token(
         Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
     };
 
-    // Create JWT with unique key id etc.
+    // Allow the header to contain the key id.
     header.kid = Some(key_id);
 
     // Create out new standard claims object.
@@ -61,6 +61,7 @@ pub async fn encode_token(
 
 // fn load_encoding_key() loads the correct encoding from the project based on the algorithm.
 fn load_encoding_key(
+    key_id: &str,
     signing_method: Algorithm,
 ) -> Result<(Header, EncodingKey), hyper::StatusCode> {
     // Based on the signing method, we load a different key for our project.
@@ -88,8 +89,11 @@ fn load_encoding_key(
                 None => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
             };
 
+            // Use our private key based on the incoming key id.
+            let private_key_name = format!("private-{}.pem", key_id);
+
             // We get the key location.
-            let key_path = format!("{}/scaffold/certs/private.pem", abs_path);
+            let key_path = format!("{}/scaffold/certs/{}", abs_path, private_key_name);
             let mut key_file = match fs::File::open(key_path) {
                 Ok(key_file) => key_file,
                 Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
