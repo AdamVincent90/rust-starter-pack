@@ -21,7 +21,8 @@ fn main() {
         logger.error_w(
             format!("error during run process : {}", err.to_string()).as_str(),
             Some("SSL main"),
-        )
+        );
+        std::process::exit(1);
     }
 
     logger.warn_w(
@@ -41,7 +42,12 @@ fn run(logger: &Logger) -> Result<(), Box<dyn std::error::Error>> {
         Err(err) => return Err(Box::new(err)),
     };
 
-    let private_key = match rsa.private_key_to_pem() {
+    let rsa = match openssl::pkey::PKey::from_rsa(rsa) {
+        Ok(rsa) => rsa,
+        Err(err) => return Err(Box::new(err)),
+    };
+
+    let private_key = match rsa.private_key_to_pem_pkcs8() {
         Ok(private_key) => private_key,
         Err(err) => return Err(Box::new(err)),
     };

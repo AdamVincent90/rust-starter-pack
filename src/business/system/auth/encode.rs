@@ -37,6 +37,8 @@ pub async fn encode_token(
         Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
     };
 
+    // Create JWT with unique key id etc.
+
     // Create out new standard claims object.
     let standard_claims = StandardClaims {
         email: user.email,

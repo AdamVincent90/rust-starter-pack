@@ -26,8 +26,6 @@ pub fn validate_token(
             Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
         };
 
-    // Sign the JWT below.
-
     Ok(data)
 }
 
