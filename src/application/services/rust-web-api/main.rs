@@ -21,6 +21,7 @@ pub struct AppConfig {
     pub app: config::AppSettings,
     pub web: config::WebSettings,
     pub db: config::DatabaseSettings,
+    pub auth: config::AuthSettings,
 }
 
 /// main.rs acts as the entrypoint for our start up and shutdown for this executable.
@@ -98,7 +99,13 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
             schema: String::from("postgres"),
         }
         .load_from_env(&logger, "DB")?,
+        auth: config::AuthSettings {
+            key_id: String::from("some-uuid"),
+        }
+        .load_from_env(&logger, "AUTH")?,
     };
+
+    println!("{}", default_config.auth.key_id);
 
     // -----------------------------------------------------------
     // Custom postgres configuration, and initialsation.

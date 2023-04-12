@@ -17,21 +17,33 @@ fn main() {
 
     logger.info_w("starting open-ssl key generation", Some("SSL main"));
 
-    if let Err(err) = run(&logger) {
-        logger.error_w(
-            format!("error during run process : {}", err.to_string()).as_str(),
-            Some("SSL main"),
-        );
-        std::process::exit(1);
-    }
+    let uuid = match run(&logger) {
+        Ok(uuid) => uuid,
+        Err(err) => {
+            logger.error_w(
+                format!("error during run process : {}", err.to_string()).as_str(),
+                Some("SSL main"),
+            );
+            std::process::exit(1);
+        }
+    };
 
     logger.warn_w(
         "key pair generated and available in scaffold/certs, its unwise to share the private key.",
         Some("SSL main"),
+    );
+
+    logger.warn_w(
+        format!(
+            "your key [{}] can be saved in your .env, and is used to identify your key",
+            uuid
+        )
+        .as_str(),
+        Some("SSL main"),
     )
 }
 
-fn run(logger: &Logger) -> Result<(), Box<dyn std::error::Error>> {
+fn run(logger: &Logger) -> Result<String, Box<dyn std::error::Error>> {
     logger.info_w(
         format!("generating RSA with {} bits", RSA_BITS).as_str(),
         Some("SSL run"),
@@ -86,7 +98,14 @@ fn run(logger: &Logger) -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    if let Err(err) = write(format!("{}/private.pem", cert_path), private_key) {
+    // Create a random uuid that acts as the unique identifier and key lookup for certain auth systems.
+    let uuid = uuid::Uuid::new_v4().to_string();
+
+    let private_key_name = format!("private-{}.pem", uuid);
+    let public_key_name = format!("public-{}.pem", uuid);
+
+    // Write the new file to path.
+    if let Err(err) = write(format!("{}/{}", cert_path, private_key_name), private_key) {
         return Err(Box::new(err));
     }
 
@@ -97,9 +116,10 @@ fn run(logger: &Logger) -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    if let Err(err) = write(format!("{}/public.pem", cert_path), public_key) {
+    // Write the new file to path.
+    if let Err(err) = write(format!("{}/{}", cert_path, public_key_name), public_key) {
         return Err(Box::new(err));
     }
 
-    Ok(())
+    Ok(uuid)
 }

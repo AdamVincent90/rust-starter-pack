@@ -36,6 +36,11 @@ pub struct DatabaseSettings {
     pub schema: String,
 }
 
+#[derive(Deserialize)]
+pub struct AuthSettings {
+    pub key_id: String,
+}
+
 // I want to derive these :(
 // But this allow our custom setting structs to implement the Conf trait and to have access to the load_from_env() default function.
 // For now, please implement the Conf trait for your custom struct. Once done, you can add your defaults to main.rs, and they will
@@ -43,6 +48,7 @@ pub struct DatabaseSettings {
 impl Conf for AppSettings {}
 impl Conf for WebSettings {}
 impl Conf for DatabaseSettings {}
+impl Conf for AuthSettings {}
 
 // ################################################
 

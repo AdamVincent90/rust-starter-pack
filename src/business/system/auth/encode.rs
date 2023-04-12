@@ -21,9 +21,6 @@ pub async fn encode_token(
         Err(err) => return Err(err),
     };
 
-    // Ass the key id to the token.
-    header.kid = Some(key_id);
-
     // Create and define when the token is created, and expires.
     let issued_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -38,6 +35,7 @@ pub async fn encode_token(
     };
 
     // Create JWT with unique key id etc.
+    header.kid = Some(key_id);
 
     // Create out new standard claims object.
     let standard_claims = StandardClaims {
