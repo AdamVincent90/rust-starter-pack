@@ -99,7 +99,6 @@ fn initialise_debug_routing() -> axum::Router {
             "/",
             get(|| async {
                 let message = "ping successful";
-                println!("{}", message);
                 Json(message)
             }),
         );

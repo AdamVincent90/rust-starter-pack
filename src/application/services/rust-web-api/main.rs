@@ -105,8 +105,6 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         .load_from_env(&logger, "AUTH")?,
     };
 
-    println!("{}", default_config.auth.key_id);
-
     // -----------------------------------------------------------
     // Custom postgres configuration, and initialsation.
     let database_config = database::Config {
