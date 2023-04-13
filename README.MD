@@ -18,6 +18,10 @@ Prequisites require that you have `rustc` and `cargo` installed on your machine,
 
 This should build a docker network consisting of your rust container running a debug, and web server. A postgres Container for storing your data, and a postgres migrate container that will perform database migrations. The initial migrations will create a `users` table with one user record.
 
+##### Making a RSA key pair
+
+`make rsa-keypair`
+
 #### Work in Porgress
 
 This project is early in development, and will contain a steady stream of changes going forward, both in terms of Rust knowledge (as I get more accumstomed to the language), research, and overall fixes and design decisions.
@@ -56,9 +60,7 @@ Example on a store entity: `make lumber store user db db-cache gcs` (supported m
 
 ##### Example of how lumber will work
 
-
 https://user-images.githubusercontent.com/37915853/230621229-670591aa-1ccb-494c-80e0-ed4f1fef0ec0.mp4
-
 
 More to follow.
 

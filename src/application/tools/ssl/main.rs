@@ -29,7 +29,7 @@ fn main() {
     };
 
     logger.warn_w(
-        "key pair generated and available in scaffold/certs, its unwise to share the private key.",
+        "key pair generated and available in scaffold/keys, its unwise to share the private key.",
         Some("SSL main"),
     );
 
@@ -71,7 +71,7 @@ fn run(logger: &Logger) -> Result<String, Box<dyn std::error::Error>> {
 
     logger.info_w("private and public key generated", Some("SSL run"));
 
-    // Store private key in scaffold/certs/key.pem
+    // Store private key in scaffold/keys/key.pem
     // Define the absolute path.
     let abs_path = PathBuf::from(match env::current_dir() {
         Ok(abs_path) => abs_path,
@@ -85,7 +85,7 @@ fn run(logger: &Logger) -> Result<String, Box<dyn std::error::Error>> {
         None => return Err("could not convert absolute path to string".into()),
     };
 
-    let cert_path = format!("{}/scaffold/certs", abs_path);
+    let cert_path = format!("{}/scaffold/keys", abs_path);
 
     if let Err(err) = create_dir_all(&cert_path) {
         return Err(Box::new(err));
