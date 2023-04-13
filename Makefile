@@ -9,11 +9,15 @@ rust-web-api:
 rsa-keypair:
 	cargo run --bin ssl
 
+.PHONY: lumber
+lumber:
+	cargo run --bin lumber $(filter-out $@,$(MAKECMDGOALS))
+
 # ==============================================================================
 # Docker Compose
 
 ## Run a bundles rust app service - targetting your main binary.
-run-dev:
+docker-up:
 	docker compose  \
 		-p ultimate-rust-service \
 		-f scaffold/docker-compose/docker-compose.yaml \
@@ -22,18 +26,13 @@ run-dev:
 		--build
 
 ## Stop the docker container from running.
-stop-dev:
+docker-down:
 	docker compose  \
 		-f scaffold/docker-compose/docker-compose.yaml \
 		--env-file .env \
 		down \
 		--rmi local
 
-# ==============================================================================
-# Lumber command
-.PHONY: lumber
-lumber:
-	cargo run --bin lumber $(filter-out $@,$(MAKECMDGOALS))
 
 # ==============================================================================
 # DB Migrations
