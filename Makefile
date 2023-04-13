@@ -6,8 +6,13 @@
 rust-web-api:
 	cargo run --bin rust-web-api
 
+.PHONY: rsa-keypair
 rsa-keypair:
-	cargo run --bin ssl
+	cargo run --bin ssl keygen $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: token
+token:
+	cargo run --bin ssl token $(filter-out $@,$(MAKECMDGOALS))
 
 .PHONY: lumber
 lumber:

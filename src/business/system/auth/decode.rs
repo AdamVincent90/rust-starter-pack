@@ -10,7 +10,7 @@ use super::auth::StandardClaims;
 // If the JWT is not valid, or the public key is incorrect, then we simply return an error.
 pub fn validate_token(
     token: String,
-    key_id: String,
+    key_id: &String,
     signing_method: Algorithm,
 ) -> Result<TokenData<StandardClaims>, axum::http::StatusCode> {
     // We obtain the relevant decoding key (private.pem for RSA256 etc)
@@ -55,7 +55,7 @@ fn load_decoding_key(
             let public_key_name = format!("public-{}.pem", key_id);
 
             // We get the key location.
-            let key_path = format!("{}/scaffold/certs/{}", abs_path, public_key_name);
+            let key_path = format!("{}/scaffold/keys/{}", abs_path, public_key_name);
             let mut key_file = match fs::File::open(key_path) {
                 Ok(key_file) => key_file,
                 Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),

@@ -1,7 +1,9 @@
 use super::versions::version_one::users;
 use axum::routing::{get, post};
 use axum::{middleware, Json, Router};
+use rust_starter_pack::business::system::auth::auth;
 use rust_starter_pack::business::web::middleware::audit::AuditContext;
+use rust_starter_pack::business::web::middleware::auth::AuthContext;
 use rust_starter_pack::business::web::middleware::error::ErrorContext;
 use rust_starter_pack::business::web::middleware::logging::LoggingContext;
 use rust_starter_pack::business::{self, web};
@@ -24,6 +26,13 @@ pub struct MuxConfig<'a> {
     // Custom Packages
     pub logger: &'a logger::Logger,
     pub db: postgres::PgPool,
+    pub auth: auth::Auth,
+}
+
+// WebContext as the app level context state for the mux.
+#[derive(Clone)]
+pub struct WebContext {
+    pub auth: auth::Auth,
 }
 
 // fn new_mux() creates two isolated web services, a debug service, and web service.
@@ -124,6 +133,14 @@ fn initialise_v1_web_routing(config: &MuxConfig) -> axum::Router {
         .route("/v1/users/:id", get(users::v1_get_user_by_id))
         // * POST ( /v1/users )
         .route("/v1/users", post(users::v1_post_user))
+        // This looks messy, should have this singular context in an arc. Need to find a nice way to
+        // Have read only access to this and one owner in auth.
+        .layer(middleware::from_fn_with_state(
+            AuthContext {
+                auth: config.auth.clone(),
+            },
+            web::middleware::auth::authenticate,
+        ))
         // * Create context for users using Arc.
         .with_state(Arc::new(user_context));
 

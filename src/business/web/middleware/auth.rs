@@ -3,12 +3,12 @@ use axum::{extract::State, http::Request, middleware::Next, response::IntoRespon
 
 // AuditContext contains all the state required to succefully audit a request.
 #[derive(Clone)]
-pub struct AuthContext<'a> {
-    pub auth: &'a Auth,
+pub struct AuthContext {
+    pub auth: Auth,
 }
 
-pub async fn authenticate<'a, B>(
-    State(context): State<AuthContext<'a>>,
+pub async fn authenticate<B>(
+    State(mut context): State<AuthContext>,
     request: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, RequestError> {
@@ -43,15 +43,14 @@ pub async fn authenticate<'a, B>(
         ));
     }
 
-    let _claims = match context.auth.authenticate(parts[1].to_string()) {
-        Ok(claims) => claims,
-        Err(err) => {
-            return Err(RequestError::new(
-                axum::http::StatusCode::FORBIDDEN,
-                format!("You are not authenticated : {}", err.as_str()),
-            ));
-        }
-    };
+    if let Err(err) = context.auth.authenticate(parts[1].to_string()) {
+        return Err(RequestError::new(
+            axum::http::StatusCode::FORBIDDEN,
+            format!("You are not authenticated : {}", err.as_str()),
+        ));
+    }
+
+    println!("claims: {:?}", context.auth.claims);
 
     // Do something with claims, how to safely share between state?
 
@@ -62,9 +61,9 @@ pub async fn authenticate<'a, B>(
     Ok(response)
 }
 
-pub async fn authorise<'a, B>(
+pub async fn authorise<B>(
     roles: Option<Vec<String>>,
-    State(context): State<AuthContext<'a>>,
+    State(context): State<AuthContext>,
     request: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, RequestError> {

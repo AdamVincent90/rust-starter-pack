@@ -1,9 +1,10 @@
 use super::{decode, encode::encode_token};
 use crate::business::core::user::stores::user_db::user_db::UserStore;
 use hyper::StatusCode;
-use jsonwebtoken::{self, Algorithm, TokenData};
+use jsonwebtoken::{self, Algorithm};
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone)]
 // The main auth struct that will be used to authenticate, and authorise a user.
 pub struct Auth {
     pub key_id: String,
@@ -20,7 +21,7 @@ pub struct AuthConfig {
 }
 
 // The struct that contains all standard claims common within a JWT.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct StandardClaims {
     pub email: String,
     pub first_name: String,
@@ -33,7 +34,14 @@ pub struct StandardClaims {
     pub sub: String,
 }
 
-// Still a work in progress.
+pub fn new(config: AuthConfig) -> Auth {
+    Auth {
+        key_id: config.key_id,
+        signing_method: config.signing_method,
+        user_store: config.user_store,
+        claims: StandardClaims::default(),
+    }
+}
 
 impl Auth {
     // Creates a new JWT for the given user id (will be uuid). Used either to manually create a token
@@ -55,15 +63,17 @@ impl Auth {
     }
 
     // pub fn authenticate() Decodes and validates the incoming token, and if successful, maps and returns the claims.
-    pub fn authenticate(&self, token: String) -> Result<TokenData<StandardClaims>, StatusCode> {
-        let data = match decode::validate_token(self.key_id.clone(), token, self.signing_method) {
+    pub fn authenticate(&mut self, token: String) -> Result<(), StatusCode> {
+        println!("{}", token);
+        let data = match decode::validate_token(token, &self.key_id, self.signing_method) {
             Ok(data) => data,
             Err(err) => return Err(err),
         };
 
         // Perform more checks
+        self.claims = data.claims;
 
-        Ok(data)
+        Ok(())
     }
 
     // pub fn authorise() checks the claims to verify if they contain the information we would like them to contain.

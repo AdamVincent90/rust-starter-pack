@@ -93,7 +93,7 @@ fn load_encoding_key(
             let private_key_name = format!("private-{}.pem", key_id);
 
             // We get the key location.
-            let key_path = format!("{}/scaffold/certs/{}", abs_path, private_key_name);
+            let key_path = format!("{}/scaffold/keys/{}", abs_path, private_key_name);
             let mut key_file = match fs::File::open(key_path) {
                 Ok(key_file) => key_file,
                 Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),

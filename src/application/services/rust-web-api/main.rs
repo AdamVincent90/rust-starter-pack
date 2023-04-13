@@ -2,8 +2,10 @@ mod config;
 mod mux;
 
 use mux::mux as axum_mux;
-use rust_starter_pack::dependency::database::database;
+use rust_starter_pack::business::core::user::stores::user_db;
+use rust_starter_pack::business::system::auth::auth::AuthConfig;
 use rust_starter_pack::dependency::logger::logger;
+use rust_starter_pack::{business::system::auth::auth, dependency::database::database};
 use signal_hook::consts::SIGTERM;
 use tokio::sync::oneshot;
 
@@ -126,6 +128,16 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     logger.info_w("postgres database loaded", Some("Rust Web API Start Up"));
 
+    // -----------------------------------------------------------
+    // Auth support
+    let auth_config = AuthConfig {
+        key_id: default_config.auth.key_id,
+        signing_method: jsonwebtoken::Algorithm::RS256,
+        user_store: user_db::user_db::new_store(logger.clone(), db.clone()),
+    };
+
+    let auth = auth::new(auth_config);
+
     // Now all custom modules have been loaded, we can now start creating threads for our web server, signals, and any other
     // threads we would like to add.
 
@@ -168,6 +180,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         debug_port: default_config.web.debug_port,
         logger: logger,
         db: db,
+        auth: auth,
     };
 
     // Finally, we create our new app, that passes in all the relevant configurations from start up.
