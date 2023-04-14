@@ -63,17 +63,24 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
                 },
                 web::middleware::logging::logging,
             ))
-            // * Auditing
-            .layer(middleware::from_fn_with_state(
-                AuditContext { db: config.db },
-                web::middleware::audit::audit,
-            ))
             // * Error handling
             .layer(middleware::from_fn_with_state(
                 ErrorContext {
                     log: config.logger.clone(),
                 },
                 web::middleware::error::error,
+            ))
+            // * Authentication
+            .layer(middleware::from_fn_with_state(
+                AuthContext {
+                    auth: config.auth.clone(),
+                },
+                web::middleware::auth::authenticate,
+            ))
+            // * Auditing
+            .layer(middleware::from_fn_with_state(
+                AuditContext { db: config.db },
+                web::middleware::audit::audit,
             )),
     );
 
@@ -133,14 +140,6 @@ fn initialise_v1_web_routing(config: &MuxConfig) -> axum::Router {
         .route("/v1/users/:id", get(users::v1_get_user_by_id))
         // * POST ( /v1/users )
         .route("/v1/users", post(users::v1_post_user))
-        // This looks messy, should have this singular context in an arc. Need to find a nice way to
-        // Have read only access to this and one owner in auth.
-        .layer(middleware::from_fn_with_state(
-            AuthContext {
-                auth: config.auth.clone(),
-            },
-            web::middleware::auth::authenticate,
-        ))
         // * Create context for users using Arc.
         .with_state(Arc::new(user_context));
 

@@ -102,7 +102,9 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         }
         .load_from_env(&logger, "DB")?,
         auth: config::AuthSettings {
+            enabled: false,
             key_id: String::from("some-uuid"),
+            public_key: String::from("******"),
         }
         .load_from_env(&logger, "AUTH")?,
     };
@@ -131,6 +133,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     // -----------------------------------------------------------
     // Auth support
     let auth_config = AuthConfig {
+        enabled: default_config.auth.enabled,
         key_id: default_config.auth.key_id,
         signing_method: jsonwebtoken::Algorithm::RS256,
         user_store: user_db::user_db::new_store(logger.clone(), db.clone()),

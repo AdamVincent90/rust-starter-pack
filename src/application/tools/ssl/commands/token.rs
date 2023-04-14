@@ -28,6 +28,7 @@ pub async fn make_token(log: &Logger) -> Result<(), Box<dyn Error>> {
 
     // Get this from env.
     let auth = auth::new(auth::AuthConfig {
+        enabled: true,
         key_id: String::from("72e8cca8-28a8-40e5-81bd-c1dbc7cfc5ee"),
         signing_method: jsonwebtoken::Algorithm::RS256,
         user_store: rust_starter_pack::business::core::user::stores::user_db::user_db::UserStore {

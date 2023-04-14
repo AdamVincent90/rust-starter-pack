@@ -38,7 +38,9 @@ pub struct DatabaseSettings {
 
 #[derive(Deserialize)]
 pub struct AuthSettings {
+    pub enabled: bool,
     pub key_id: String,
+    pub public_key: String,
 }
 
 // I want to derive these :(

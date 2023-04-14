@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone)]
 // The main auth struct that will be used to authenticate, and authorise a user.
 pub struct Auth {
+    pub enabled: bool,
     pub key_id: String,
     pub signing_method: Algorithm,
     pub user_store: UserStore,
@@ -15,6 +16,7 @@ pub struct Auth {
 
 // The configuration when creating a new auth instance.
 pub struct AuthConfig {
+    pub enabled: bool,
     pub key_id: String,
     pub signing_method: Algorithm,
     pub user_store: UserStore,
@@ -36,6 +38,7 @@ pub struct StandardClaims {
 
 pub fn new(config: AuthConfig) -> Auth {
     Auth {
+        enabled: config.enabled,
         key_id: config.key_id,
         signing_method: config.signing_method,
         user_store: config.user_store,
