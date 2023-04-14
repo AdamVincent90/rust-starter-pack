@@ -1,5 +1,8 @@
-use crate::business::system::{auth::auth::Auth, error::error::RequestError};
-use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
+use crate::business::{
+    system::{auth::auth::Auth, error::error::RequestError},
+    web::state::state::WebState,
+};
+use axum::{http::Request, middleware::Next, response::IntoResponse, Extension};
 
 // AuditContext contains all the state required to succefully audit a request.
 #[derive(Clone)]
@@ -8,13 +11,15 @@ pub struct AuthContext {
 }
 
 pub async fn authenticate<B>(
-    State(mut context): State<AuthContext>,
+    Extension(state): Extension<WebState>,
     request: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, RequestError> {
     // Pre Handler Logic
 
-    if context.auth.enabled {
+    let mut state = state.write().await;
+
+    if state.auth.enabled {
         let token = match request.headers().get(axum::http::header::AUTHORIZATION) {
             Some(token) => token,
             None => {
@@ -44,14 +49,14 @@ pub async fn authenticate<B>(
             ));
         }
 
-        if let Err(err) = context.auth.authenticate(parts[1].to_string()) {
+        if let Err(err) = state.auth.authenticate(parts[1].to_string()) {
             return Err(RequestError::new(
                 axum::http::StatusCode::FORBIDDEN,
                 format!("You are not authenticated : {}", err.as_str()),
             ));
         }
 
-        println!("claims: {:?}", context.auth.claims);
+        println!("claims: {:?}", state.auth.claims);
     }
 
     // Do something with claims, how to safely share between state?
@@ -65,14 +70,16 @@ pub async fn authenticate<B>(
 
 pub async fn authorise<B>(
     roles: Option<Vec<String>>,
-    State(context): State<AuthContext>,
+    Extension(state): Extension<WebState>,
     request: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, RequestError> {
     // Pre Handler Logic
 
-    if context.auth.enabled {
-        if let Err(err) = context.auth.authorise(&context.auth.claims, roles) {
+    let state = state.read().await;
+
+    if state.auth.enabled {
+        if let Err(err) = state.auth.authorise(&state.auth.claims, roles) {
             return Err(RequestError::new(
                 axum::http::StatusCode::UNAUTHORIZED,
                 format!("You are not authorised : {}", err.as_str()),

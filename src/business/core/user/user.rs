@@ -5,7 +5,7 @@ use super::{
     },
     V1PostUser,
 };
-use crate::business::system::error::error::RequestError;
+use crate::business::system::{auth::auth::Auth, error::error::RequestError};
 use crate::dependency::logger::logger::Logger;
 use sqlx::PgPool;
 
@@ -27,7 +27,9 @@ pub fn new_core(logger: &Logger, db: &PgPool) -> UserCore {
 // One example can be business/core/user/clients/[grpc, rest] that will allow this core to send requests.
 impl UserCore {
     // fn v1_get_users() is the core entrypoint to start user business logic for getting all users.
-    pub async fn get_all(&self) -> Result<Vec<User>, RequestError> {
+    pub async fn get_all(&self, auth: &Auth) -> Result<Vec<User>, RequestError> {
+        println!("{:?}", auth.claims);
+
         let result = match self.user_store.query_users().await {
             Ok(result) => result,
             Err(err) => {
@@ -41,7 +43,8 @@ impl UserCore {
         Ok(result)
     }
     // fn v1_get_users_by_id() is the core entrypoint to start user business logic for getting a user by id.
-    pub async fn get_by_id(&self, id: i32) -> Result<User, RequestError> {
+    pub async fn get_by_id(&self, auth: &Auth, id: i32) -> Result<User, RequestError> {
+        println!("{:?}", auth.claims);
         let result = match self.user_store.query_user_by_id(id).await {
             Ok(result) => result,
             Err(err) => {
@@ -54,7 +57,8 @@ impl UserCore {
         Ok(result)
     }
     // fn v1_post_user() is the core entrypoint to start user business logic for creating a new user.
-    pub async fn create(&self, user: V1PostUser) -> Result<(), RequestError> {
+    pub async fn create(&self, auth: &Auth, user: V1PostUser) -> Result<(), RequestError> {
+        println!("{:?}", auth.claims);
         if let Err(err) = self.user_store.create_user(user).await {
             return Err(RequestError::new(
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR,

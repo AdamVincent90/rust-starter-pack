@@ -15,6 +15,7 @@ pub mod business {
 
     pub mod web {
         pub mod middleware;
+        pub mod state;
     }
 }
 

@@ -101,4 +101,9 @@ impl Auth {
 
         Ok(())
     }
+
+    // pb fn get_claims returns a clone of standard claims for read only access.
+    pub fn get_claims(&self) -> StandardClaims {
+        self.claims.clone()
+    }
 }
