@@ -17,7 +17,7 @@ pub async fn authenticate<B>(
 ) -> Result<impl IntoResponse, RequestError> {
     // Pre Handler Logic
 
-    let mut state = state.write().await;
+    let mut state = state.write_owned().await;
 
     if state.auth.enabled {
         let token = match request.headers().get(axum::http::header::AUTHORIZATION) {
@@ -58,6 +58,10 @@ pub async fn authenticate<B>(
 
         println!("claims: {:?}", state.auth.claims);
     }
+
+    // Because we are calling the next handler, and RWLOCK requires read access for other functions
+    // down the stack, we need to drop the lock manually as the scope is not technically ended
+    drop(state);
 
     // Do something with claims, how to safely share between state?
 

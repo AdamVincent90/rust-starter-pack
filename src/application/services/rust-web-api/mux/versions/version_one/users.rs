@@ -31,6 +31,8 @@ pub async fn v1_get_users(
 ) -> Result<impl IntoResponse, RequestError> {
     let state = &state.read().await;
 
+    println!("CLAIMS: {:?}", state.auth.claims);
+
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
     let result = match context.user_core.get_all(&state.auth).await {
         Ok(result) => result,

@@ -1,6 +1,6 @@
 use super::versions::version_one::users;
 use axum::routing::{get, post};
-use axum::{middleware, Extension, Json, Router};
+use axum::{middleware, Json, Router, Extension};
 use rust_starter_pack::business::system::auth::auth::{self};
 use rust_starter_pack::business::web::middleware::audit::AuditContext;
 use rust_starter_pack::business::web::middleware::error::ErrorContext;
@@ -10,8 +10,8 @@ use rust_starter_pack::business::{self, web};
 use rust_starter_pack::dependency::logger::logger;
 use rust_starter_pack::dependency::server::server::{self, Axum};
 use sqlx::postgres;
-use std::sync::Arc;
 use tokio::sync::RwLock;
+use std::sync::Arc;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
 // Mux acts as the multiplexer in order to configure and create our services that acts as the main layer
@@ -47,40 +47,35 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
     // Create Debug route handlers.
     let debug_routes = initialise_debug_routing();
 
-    let web_routes = Router::new()
-        // We merge our state to our v1 routes with v1 middleware.
-        .merge(
-            // Now we create our application middleware to layer around our v1 routes. This will also include other versioned routes.
-            v1_routes
-                .layer(Extension(WebState::new(RwLock::new(MuxState {
-                    auth: config.auth,
-                }))))
-                .layer(
-                    // We use ServiceBuilder as this means that the order of middleware is from top to bottom.
-                    ServiceBuilder::new()
-                        // * Logging
-                        .layer(middleware::from_fn_with_state(
-                            LoggingContext {
-                                log: config.logger.clone(),
-                            },
-                            web::middleware::logging::logging,
-                        ))
-                        // * Error handling
-                        .layer(middleware::from_fn_with_state(
-                            ErrorContext {
-                                log: config.logger.clone(),
-                            },
-                            web::middleware::error::error,
-                        ))
-                        // * Authentication
-                        .layer(middleware::from_fn(web::middleware::auth::authenticate))
-                        // * Auditing
-                        .layer(middleware::from_fn_with_state(
-                            AuditContext { db: config.db },
-                            web::middleware::audit::audit,
-                        )), // The global state for our mux. This uses RWLock
-                ),
-        );
+    let global_state = WebState::new(RwLock::new(MuxState { auth: config.auth }));
+
+    let web_routes = 
+        // Now we create our application middleware to layer around our v1 routes. This will also include other versioned routes.
+        v1_routes.layer(
+            // We use ServiceBuilder as this means that the order of middleware is from top to bottom.
+            ServiceBuilder::new()
+                // * Logging
+                .layer(middleware::from_fn_with_state(
+                    LoggingContext {
+                        log: config.logger.clone(),
+                    },
+                    web::middleware::logging::logging,
+                ))
+                // * Error handling
+                .layer(middleware::from_fn_with_state(
+                    ErrorContext {
+                        log: config.logger.clone(),
+                    },
+                    web::middleware::error::error,
+                ))
+                // * Authentication
+                .layer(middleware::from_fn(web::middleware::auth::authenticate))
+                // * Auditing
+                .layer(middleware::from_fn_with_state(
+                    AuditContext { db: config.db },
+                    web::middleware::audit::audit,
+                )),
+    ).layer(Extension(global_state));
 
     // Here we lastly create our new muxes, and then return to main in order to block the application
     // As stated before, this will be in a seperate thread so we can have multiple senders potentially
