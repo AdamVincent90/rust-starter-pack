@@ -1,8 +1,8 @@
 // Remove when no longer required.
-#![allow(dead_code)]
+#![allow(dead_code, unused)]
 
+use crate::business::{system::error::error::RequestError, web::state::shared::MuxState};
 use crate::dependency::logger::logger::Logger;
-use crate::business::system::validation::validation::RequestError;
 
 #[derive(Clone)]
 pub struct {{upper name}}Core {
@@ -16,7 +16,7 @@ pub fn new_{{name}}_core(logger: &Logger) -> {{upper name}}Core {
 
 // Implement the core logic for {{name}}s.
 impl {{upper name}}Core {
-    pub async fn example_{{name}}_function(&self) -> Result<(), RequestError> {
+    pub async fn example_{{name}}_function(&self, state: &MuxState) -> Result<(), RequestError> {
         // ! Implement me.
         Ok(())
     }

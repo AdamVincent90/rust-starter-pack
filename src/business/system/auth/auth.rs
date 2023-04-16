@@ -1,8 +1,11 @@
 use super::{decode, encode::encode_token};
-use crate::business::core::user::stores::user_db::user_db::UserStore;
+use crate::business::{
+    core::user::stores::user_db::user_db::UserStore, web::state::shared::MuxState,
+};
 use hyper::StatusCode;
 use jsonwebtoken::{self, Algorithm};
 use serde::{Deserialize, Serialize};
+use tokio::sync::{RwLockReadGuard, RwLockWriteGuard};
 
 #[derive(Clone)]
 // The main auth struct that will be used to authenticate, and authorise a user.
@@ -11,7 +14,6 @@ pub struct Auth {
     pub key_id: String,
     pub signing_method: Algorithm,
     pub user_store: UserStore,
-    pub claims: StandardClaims,
 }
 
 // The configuration when creating a new auth instance.
@@ -42,7 +44,6 @@ pub fn new(config: AuthConfig) -> Auth {
         key_id: config.key_id,
         signing_method: config.signing_method,
         user_store: config.user_store,
-        claims: StandardClaims::default(),
     }
 }
 
@@ -66,15 +67,18 @@ impl Auth {
     }
 
     // pub fn authenticate() Decodes and validates the incoming token, and if successful, maps and returns the claims.
-    pub fn authenticate(&mut self, token: String) -> Result<(), StatusCode> {
-        println!("{}", token);
+    pub fn authenticate(
+        &self,
+        token: String,
+        mutex: &mut RwLockWriteGuard<MuxState>,
+    ) -> Result<(), StatusCode> {
         let data = match decode::validate_token(token, &self.key_id, self.signing_method) {
             Ok(data) => data,
             Err(err) => return Err(err),
         };
 
-        // Perform more checks
-        self.claims = data.claims;
+        // Save to claims from our mutex shared state.
+        mutex.claims = data.claims;
 
         Ok(())
     }
@@ -82,7 +86,7 @@ impl Auth {
     // pub fn authorise() checks the claims to verify if they contain the information we would like them to contain.
     pub fn authorise(
         &self,
-        claims: &StandardClaims,
+        mutex: &RwLockReadGuard<MuxState>,
         roles: Option<Vec<String>>,
     ) -> Result<(), StatusCode> {
         // Very Basic for now.
@@ -95,15 +99,10 @@ impl Auth {
             }
         };
 
-        if !list.contains(&claims.role) {
+        if !list.contains(&mutex.claims.role) {
             return Err(StatusCode::UNAUTHORIZED);
         }
 
         Ok(())
-    }
-
-    // pb fn get_claims returns a clone of standard claims for read only access.
-    pub fn get_claims(&self) -> StandardClaims {
-        self.claims.clone()
     }
 }

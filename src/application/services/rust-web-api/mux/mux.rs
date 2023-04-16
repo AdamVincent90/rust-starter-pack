@@ -1,17 +1,18 @@
 use super::versions::version_one::users;
 use axum::routing::{get, post};
-use axum::{middleware, Json, Router, Extension};
-use rust_starter_pack::business::system::auth::auth::{self};
-use rust_starter_pack::business::web::middleware::audit::AuditContext;
-use rust_starter_pack::business::web::middleware::error::ErrorContext;
-use rust_starter_pack::business::web::middleware::logging::LoggingContext;
-use rust_starter_pack::business::web::state::state::{MuxState, WebState};
+use axum::{middleware, Extension, Json, Router};
+use rust_starter_pack::business::system::auth::auth::{self, StandardClaims};
+use rust_starter_pack::business::web::state::handler::UserContext;
+use rust_starter_pack::business::web::state::middleware::{
+    AuditContext, AuthContext, ErrorContext, LoggingContext,
+};
+use rust_starter_pack::business::web::state::shared::{MuxState, SharedState};
 use rust_starter_pack::business::{self, web};
 use rust_starter_pack::dependency::logger::logger;
 use rust_starter_pack::dependency::server::server::{self, Axum};
 use sqlx::postgres;
-use tokio::sync::RwLock;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
 // Mux acts as the multiplexer in order to configure and create our services that acts as the main layer
@@ -47,11 +48,16 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
     // Create Debug route handlers.
     let debug_routes = initialise_debug_routing();
 
-    let global_state = WebState::new(RwLock::new(MuxState { auth: config.auth }));
+    // Initialise our global web state that is shared across the project.
+    // Global state uses A mutex to safely read and write to the state without any side effects.
+    let global_state = SharedState::new(RwLock::new(MuxState {
+        claims: StandardClaims::default(),
+    }));
 
-    let web_routes = 
-        // Now we create our application middleware to layer around our v1 routes. This will also include other versioned routes.
-        v1_routes.layer(
+    // * Initialise our v1 routes with our application level middleware, and shared state.
+    // Now we create our application middleware to layer around our v1 routes. This will also include other versioned routes.
+    let web_routes = v1_routes
+        .layer(
             // We use ServiceBuilder as this means that the order of middleware is from top to bottom.
             ServiceBuilder::new()
                 // * Logging
@@ -69,13 +75,17 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
                     web::middleware::error::error,
                 ))
                 // * Authentication
-                .layer(middleware::from_fn(web::middleware::auth::authenticate))
+                .layer(middleware::from_fn_with_state(
+                    AuthContext { auth: config.auth },
+                    web::middleware::auth::authenticate,
+                ))
                 // * Auditing
                 .layer(middleware::from_fn_with_state(
                     AuditContext { db: config.db },
                     web::middleware::audit::audit,
                 )),
-    ).layer(Extension(global_state));
+        )
+        .layer(Extension(global_state));
 
     // Here we lastly create our new muxes, and then return to main in order to block the application
     // As stated before, this will be in a seperate thread so we can have multiple senders potentially
@@ -120,7 +130,7 @@ fn initialise_debug_routing() -> axum::Router {
 // manner.
 fn initialise_v1_web_routing(config: &MuxConfig) -> axum::Router {
     // Create user handler that will acts as the context for users routes.
-    let user_context = users::UserContext {
+    let user_context = UserContext {
         version: String::from("v1"),
         user_core: business::core::user::user::new_core(&config.logger, &config.db),
     };

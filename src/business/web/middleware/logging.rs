@@ -1,12 +1,5 @@
+use crate::business::{system::error::error::RequestError, web::state::middleware::LoggingContext};
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
-
-use crate::{business::system::error::error::RequestError, dependency::logger::logger::Logger};
-
-// AuditContext contains all the state required to succefully audit a request.
-#[derive(Clone)]
-pub struct LoggingContext {
-    pub log: Logger,
-}
 
 pub async fn logging<B>(
     State(context): State<LoggingContext>,

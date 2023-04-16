@@ -4,37 +4,30 @@ use axum::{
     Json,
 };
 use rust_starter_pack::business::{
-    self, core::user::V1PostUser, system::error::error::RequestError, web::state::state,
+    core::user::V1PostUser,
+    system::error::error::RequestError,
+    web::state::{handler::UserContext, shared::SharedState},
 };
-
 use std::sync::Arc;
 use validator::Validate;
 
-// UserContext contains any state required when it comes to working with user operations.
-#[derive(Clone)]
-pub struct UserContext {
-    pub version: String,
-    pub user_core: business::core::user::user::UserCore,
-}
-
 // * Any errors returned from handler functions, will be caught and then processed in middleware.
 
-// * Handlers deal with three things.
-// * 1. Validate the request
-// * 2. Call the core function (Passing in any extensions or context)
-// * 3. Returning the outcome.
+// * Entrypoint Handlers deal with the following things.
+// * 1. Lock/Read the web state
+// * 2. Validate the request params/body
+// * 3. Loading the context to run the core function.
+// * 4. Return the response or the error up the stack.
 
 // fn v1_get_users() is the main handler for (GET /v1/users)
 pub async fn v1_get_users(
-    Extension(state): Extension<state::WebState>,
+    Extension(state): Extension<SharedState>,
     State(context): State<Arc<UserContext>>,
 ) -> Result<impl IntoResponse, RequestError> {
     let state = &state.read().await;
 
-    println!("CLAIMS: {:?}", state.auth.claims);
-
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    let result = match context.user_core.get_all(&state.auth).await {
+    let result = match context.user_core.get_all(state).await {
         Ok(result) => result,
         Err(err) => {
             return Err(err);
@@ -46,13 +39,13 @@ pub async fn v1_get_users(
 
 // fn v1_get_user_by_id() is the main handler for (GET /v1/users/{id})
 pub async fn v1_get_user_by_id(
-    Extension(state): Extension<state::WebState>,
+    Extension(state): Extension<SharedState>,
     State(context): State<Arc<UserContext>>,
     Path(id): Path<i32>,
 ) -> Result<impl IntoResponse, RequestError> {
     let state = &state.read().await;
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    let result = match context.user_core.get_by_id(&state.auth, id).await {
+    let result = match context.user_core.get_by_id(&state, id).await {
         Ok(result) => result,
         Err(err) => {
             return Err(err);
@@ -64,7 +57,7 @@ pub async fn v1_get_user_by_id(
 
 // fn v1_get_user_by_id() is the main handler for (POST /v1/users)
 pub async fn v1_post_user(
-    Extension(state): Extension<state::WebState>,
+    Extension(state): Extension<SharedState>,
     State(context): State<Arc<UserContext>>,
     Json(user): Json<V1PostUser>,
 ) -> Result<impl IntoResponse, RequestError> {
@@ -78,7 +71,7 @@ pub async fn v1_post_user(
     }
 
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
-    if let Err(err) = context.user_core.create(&state.auth, user).await {
+    if let Err(err) = context.user_core.create(&state, user).await {
         return Err(err);
     }
 

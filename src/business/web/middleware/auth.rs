@@ -1,25 +1,20 @@
 use crate::business::{
-    system::{auth::auth::Auth, error::error::RequestError},
-    web::state::state::WebState,
+    system::error::error::RequestError,
+    web::state::{middleware::AuthContext, shared::SharedState},
 };
-use axum::{http::Request, middleware::Next, response::IntoResponse, Extension};
-
-// AuditContext contains all the state required to succefully audit a request.
-#[derive(Clone)]
-pub struct AuthContext {
-    pub auth: Auth,
-}
+use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse, Extension};
 
 pub async fn authenticate<B>(
-    Extension(state): Extension<WebState>,
+    Extension(state): Extension<SharedState>,
+    State(context): State<AuthContext>,
     request: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, RequestError> {
     // Pre Handler Logic
 
-    let mut state = state.write_owned().await;
+    let mut state = state.write().await;
 
-    if state.auth.enabled {
+    if context.auth.enabled {
         let token = match request.headers().get(axum::http::header::AUTHORIZATION) {
             Some(token) => token,
             None => {
@@ -49,14 +44,12 @@ pub async fn authenticate<B>(
             ));
         }
 
-        if let Err(err) = state.auth.authenticate(parts[1].to_string()) {
+        if let Err(err) = context.auth.authenticate(parts[1].to_string(), &mut state) {
             return Err(RequestError::new(
                 axum::http::StatusCode::FORBIDDEN,
                 format!("You are not authenticated : {}", err.as_str()),
             ));
         }
-
-        println!("claims: {:?}", state.auth.claims);
     }
 
     // Because we are calling the next handler, and RWLOCK requires read access for other functions
@@ -74,7 +67,8 @@ pub async fn authenticate<B>(
 
 pub async fn authorise<B>(
     roles: Option<Vec<String>>,
-    Extension(state): Extension<WebState>,
+    Extension(state): Extension<SharedState>,
+    State(context): State<AuthContext>,
     request: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, RequestError> {
@@ -82,14 +76,18 @@ pub async fn authorise<B>(
 
     let state = state.read().await;
 
-    if state.auth.enabled {
-        if let Err(err) = state.auth.authorise(&state.auth.claims, roles) {
+    if context.auth.enabled {
+        if let Err(err) = context.auth.authorise(&state, roles) {
             return Err(RequestError::new(
                 axum::http::StatusCode::UNAUTHORIZED,
                 format!("You are not authorised : {}", err.as_str()),
             ));
         }
     }
+
+    // Because we are calling the next handler, and RWLOCK requires read access for other functions
+    // down the stack, we need to drop the lock manually as the scope is not technically ended
+    drop(state);
 
     let response = next.run(request).await;
 

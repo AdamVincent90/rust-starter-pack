@@ -141,6 +141,8 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     let auth = auth::new(auth_config);
 
+    logger.info_w("auth config loaded", Some("Rust Web API Start Up"));
+
     // Now all custom modules have been loaded, we can now start creating threads for our web server, signals, and any other
     // threads we would like to add.
 
