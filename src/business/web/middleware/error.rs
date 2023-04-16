@@ -1,5 +1,12 @@
-use crate::business::{system::error::error::RequestError, web::state::middleware::ErrorContext};
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
+
+use crate::{business::system::error::error::RequestError, dependency::logger::logger::Logger};
+
+// ErrorContext contains all the state required to succefully handle request errors.
+#[derive(Clone)]
+pub struct ErrorContext {
+    pub log: Logger,
+}
 
 pub async fn error<B>(
     State(context): State<ErrorContext>,

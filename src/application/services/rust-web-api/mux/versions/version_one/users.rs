@@ -4,9 +4,8 @@ use axum::{
     Json,
 };
 use rust_starter_pack::business::{
-    core::user::V1PostUser,
-    system::error::error::RequestError,
-    web::state::{handler::UserContext, shared::SharedState},
+    self, core::user::V1PostUser, system::error::error::RequestError,
+    web::state::state::SharedState,
 };
 use std::sync::Arc;
 use validator::Validate;
@@ -18,6 +17,13 @@ use validator::Validate;
 // * 2. Validate the request params/body
 // * 3. Loading the context to run the core function.
 // * 4. Return the response or the error up the stack.
+
+// UserContext contains any state required when it comes to working with user operations.
+#[derive(Clone)]
+pub struct UserContext {
+    pub version: String,
+    pub user_core: business::core::user::user::UserCore,
+}
 
 // fn v1_get_users() is the main handler for (GET /v1/users)
 pub async fn v1_get_users(

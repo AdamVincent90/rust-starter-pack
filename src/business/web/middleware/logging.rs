@@ -1,5 +1,11 @@
-use crate::business::{system::error::error::RequestError, web::state::middleware::LoggingContext};
+use crate::{business::system::error::error::RequestError, dependency::logger::logger::Logger};
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
+
+// LoggingContext contains all the state required to succefully log a request.
+#[derive(Clone)]
+pub struct LoggingContext {
+    pub log: Logger,
+}
 
 pub async fn logging<B>(
     State(context): State<LoggingContext>,

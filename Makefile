@@ -3,17 +3,22 @@
 
 # ==============================================================================
 # Binary Commands
+
+# Run web api locally (Check envs)
 rust-web-api:
 	cargo run --bin rust-web-api
 
+# Create a new RSA256 keypair
 .PHONY: rsa-keypair
 rsa-keypair:
 	cargo run --bin ssl keygen $(filter-out $@,$(MAKECMDGOALS))
 
+# Create a new access token using a local rsa keypair
 .PHONY: token
 token:
 	cargo run --bin ssl token $(filter-out $@,$(MAKECMDGOALS))
 
+# Generate core custom functionality.
 .PHONY: lumber
 lumber:
 	cargo run --bin lumber $(filter-out $@,$(MAKECMDGOALS))
@@ -21,7 +26,7 @@ lumber:
 # ==============================================================================
 # Docker Compose
 
-## Run a bundles rust app service - targetting your main binary.
+## Run a bundled rust app service - targetting your main binary.
 docker-up:
 	docker compose  \
 		-p ultimate-rust-service \

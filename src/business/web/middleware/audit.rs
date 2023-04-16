@@ -1,8 +1,14 @@
-use crate::business::web::state::middleware::AuditContext;
 use crate::{business::system::error::error::RequestError, dependency::database};
 use axum::http::header;
 use axum::response::IntoResponse;
 use axum::{extract::State, http::Request, middleware::Next};
+use sqlx::PgPool;
+
+// AuditContext contains all the state required to succefully audit a request.
+#[derive(Clone)]
+pub struct AuditContext {
+    pub db: PgPool,
+}
 
 // This one will use an extractor and post handler logic to add to audit logs.
 pub async fn audit<B>(

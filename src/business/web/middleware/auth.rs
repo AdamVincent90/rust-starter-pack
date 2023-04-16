@@ -1,8 +1,14 @@
 use crate::business::{
-    system::error::error::RequestError,
-    web::state::{middleware::AuthContext, shared::SharedState},
+    system::{auth::auth::Auth, error::error::RequestError},
+    web::state::state::SharedState,
 };
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse, Extension};
+
+// AuthContext contains all the state required to succefully auth a request.
+#[derive(Clone)]
+pub struct AuthContext {
+    pub auth: Auth,
+}
 
 pub async fn authenticate<B>(
     Extension(state): Extension<SharedState>,
@@ -12,6 +18,8 @@ pub async fn authenticate<B>(
 ) -> Result<impl IntoResponse, RequestError> {
     // Pre Handler Logic
 
+    // Lock our shared state with write access to update claims to our state on succesful
+    // authentication.
     let mut state = state.write().await;
 
     if context.auth.enabled {
@@ -54,6 +62,7 @@ pub async fn authenticate<B>(
 
     // Because we are calling the next handler, and RWLOCK requires read access for other functions
     // down the stack, we need to drop the lock manually as the scope is not technically ended
+    // and the write lock has completed.
     drop(state);
 
     // Do something with claims, how to safely share between state?
@@ -86,7 +95,7 @@ pub async fn authorise<B>(
     }
 
     // Because we are calling the next handler, and RWLOCK requires read access for other functions
-    // down the stack, we need to drop the lock manually as the scope is not technically ended
+    // down the stack, we need to drop the lock manually as the scope is not technically ended.
     drop(state);
 
     let response = next.run(request).await;

@@ -1,13 +1,13 @@
-use super::versions::version_one::users;
+use super::versions::version_one::users::{self, UserContext};
 use axum::routing::{get, post};
 use axum::{middleware, Extension, Json, Router};
+use rust_starter_pack::business::core::user::user;
 use rust_starter_pack::business::system::auth::auth::{self, StandardClaims};
-use rust_starter_pack::business::web::state::handler::UserContext;
-use rust_starter_pack::business::web::state::middleware::{
-    AuditContext, AuthContext, ErrorContext, LoggingContext,
-};
-use rust_starter_pack::business::web::state::shared::{MuxState, SharedState};
-use rust_starter_pack::business::{self, web};
+use rust_starter_pack::business::web::middleware::audit::{audit, AuditContext};
+use rust_starter_pack::business::web::middleware::auth::{authenticate, AuthContext};
+use rust_starter_pack::business::web::middleware::error::{error, ErrorContext};
+use rust_starter_pack::business::web::middleware::logging::{logging, LoggingContext};
+use rust_starter_pack::business::web::state::state::{MuxState, SharedState};
 use rust_starter_pack::dependency::logger::logger;
 use rust_starter_pack::dependency::server::server::{self, Axum};
 use sqlx::postgres;
@@ -65,24 +65,24 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
                     LoggingContext {
                         log: config.logger.clone(),
                     },
-                    web::middleware::logging::logging,
+                    logging,
                 ))
                 // * Error handling
                 .layer(middleware::from_fn_with_state(
                     ErrorContext {
                         log: config.logger.clone(),
                     },
-                    web::middleware::error::error,
+                    error,
                 ))
                 // * Authentication
                 .layer(middleware::from_fn_with_state(
                     AuthContext { auth: config.auth },
-                    web::middleware::auth::authenticate,
+                    authenticate,
                 ))
                 // * Auditing
                 .layer(middleware::from_fn_with_state(
                     AuditContext { db: config.db },
-                    web::middleware::audit::audit,
+                    audit,
                 )),
         )
         .layer(Extension(global_state));
@@ -132,7 +132,7 @@ fn initialise_v1_web_routing(config: &MuxConfig) -> axum::Router {
     // Create user handler that will acts as the context for users routes.
     let user_context = UserContext {
         version: String::from("v1"),
-        user_core: business::core::user::user::new_core(&config.logger, &config.db),
+        user_core: user::new_core(&config.logger, &config.db),
     };
 
     // Build our router for users.

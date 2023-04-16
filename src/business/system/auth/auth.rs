@@ -1,6 +1,6 @@
 use super::{decode, encode::encode_token};
 use crate::business::{
-    core::user::stores::user_db::user_db::UserStore, web::state::shared::MuxState,
+    core::user::stores::user_db::user_db::UserStore, web::state::state::MuxState,
 };
 use hyper::StatusCode;
 use jsonwebtoken::{self, Algorithm};
@@ -104,5 +104,19 @@ impl Auth {
         }
 
         Ok(())
+    }
+}
+
+impl StandardClaims {
+    // Has the Exp claim expired?
+    pub fn has_expired() {
+        todo!();
+    }
+    // Does a particular value exist in the claims?
+    pub fn exists_in_claims() {
+        todo!()
+    }
+    pub fn has_role() {
+        todo!()
     }
 }
