@@ -1,10 +1,10 @@
+use axum::Router;
+use hyper::Uri;
 use std::{
+    error::Error,
     net::{IpAddr, SocketAddr},
     str::FromStr,
 };
-
-use awc::error::SendRequestError;
-use axum::Router;
 use tokio::sync::oneshot::Sender;
 
 #[derive(Clone)]
@@ -66,23 +66,30 @@ impl Axum {
     }
 
     // async fn liveness_check() does a ping to the server to validate is liveness.
-    pub async fn liveness_check(&self, max_attempts: u8) -> Result<(), SendRequestError> {
-        // We use awc as the client to send requests for now.
-        let client = awc::Client::default();
+    pub async fn liveness_check(&self, max_attempts: u8) -> Result<(), Box<dyn Error>> {
+        // We use hyper as the client to send requests for now.
+        let client = hyper::client::Client::new();
 
-        // Merge host and port.
-        let full_address = format!("{}:{}", self.web_address, self.port.to_string());
-
-        // Based on the number of attempts provided, we keep pinging the server until this limit is reached
-        // Once it has, we return an error.
         for i in 1..=max_attempts {
-            match client.get(full_address.as_str()).send().await {
+            // Merge host and port.
+            let full_address = match Uri::from_str(
+                format!("{}:{}", self.web_address, self.port.to_string()).as_str(),
+            ) {
+                Ok(full_address) => full_address,
+                Err(err) => return Err(Box::new(err)),
+            };
+
+            let req = client.get(full_address);
+
+            // Based on the number of attempts provided, we keep pinging the server until this limit is reached
+            // Once it has, we return an error.
+            match req.await {
                 Ok(_) => {
                     break;
                 }
                 Err(err) => {
                     if i == max_attempts {
-                        return Err(err);
+                        return Err(Box::new(err));
                     }
                 }
             };
