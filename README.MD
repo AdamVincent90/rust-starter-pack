@@ -34,9 +34,10 @@ The below theory will be further discussed in detail in the future.
 - The Blueprint (reading material, diagrams, research, documentations, collections)
 - The Scaffold (infrastucture, migrations, metadata, scripts, agnostic tooling)
 - The Src (the actual rust code that underpins your scaffold and blueprints) has 3 sub layers
-  1. App (executables rust services, executable rust tooling, rust configuration to get a rust app ready to perform business tasks)
-  2. Business (logic the app layer calls to perform a business task for example such as queries to the database, running middleware, performing core business logic for a handler, business models)
-  3. Dependency (independant modules that have no context for the given business, for example, database connectivity, logging, and utility modules that aid your rust app and business layer logic)
+  1. App (executables rust services, executable rust tooling, rust configuration to get a rust app ready to perform business tasks). This layer can also contain modules that are exclusive to this app, for example lumber uses templates that only lumber will used. This is a good use case to use as a submodule over a domain module.
+  2. Core (contains all your self contained modules to successfully perform a business task, this is where the main logic for your project is fired. This can include things such as Creating a user, looking up a user, etc) The main logic and entrypoint that your app layer binary runs.
+  3. Domain contains all your business/project specific modules, these can be things like web middleware and shared state, or system validation, errors and auth.
+  4. Lib (independant modules that have no context for the given business, for example, database connectivity, logging, and utility modules that aid your rust app and business layer logic)
 
 #### Other Features this rust starter kit will be bundled with.
 

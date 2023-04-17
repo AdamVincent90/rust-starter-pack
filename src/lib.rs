@@ -2,11 +2,14 @@
 // This allows our App and Business layers to call modules and use them for
 // Our tools, services, and workers.
 
-pub mod business {
-    // Your business modules here.
-    pub mod core {
-        pub mod user;
-    }
+// Your core modules here.
+pub mod core {
+    pub mod pokemon;
+    pub mod user;
+}
+
+// Your domain modules here.
+pub mod domain {
 
     pub mod system {
         pub mod auth;
@@ -19,7 +22,8 @@ pub mod business {
     }
 }
 
-pub mod dependency {
+// Your lib modules here.
+pub mod lib {
     pub mod database;
     pub mod logger;
     pub mod server;
