@@ -175,6 +175,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     let (debug_send, debug_recv) = oneshot::channel();
 
     let handler_config = axum_mux::MuxConfig {
+        environment: default_config.app.environment,
         web_address: default_config.web.address,
         web_port: default_config.web.port,
         debug_address: default_config.web.debug_address,

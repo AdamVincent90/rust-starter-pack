@@ -11,5 +11,6 @@ pub type SharedState = Arc<RwLock<MuxState>>;
 
 // Any data that would be advantagous to contain for shared readable, and writable state.
 pub struct MuxState {
+    pub environment: String,
     pub claims: StandardClaims,
 }

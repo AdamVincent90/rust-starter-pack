@@ -21,6 +21,7 @@ use tower_http::trace::TraceLayer;
 // This is where we provide all our packages, and options to prepare our web handler with the relevant
 // features they require to perform business operations.
 pub struct MuxConfig<'a> {
+    pub environment: String,
     pub web_address: String,
     pub web_port: u16,
     pub debug_address: String,
@@ -38,25 +39,18 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
     // Firstly, we create our tracing support.
 
     // TODO - tracing needs to be more granula and contain actual logging.
-    // TODO - this is a placeholder at the moment.
-
     let tracer: Router = Router::new().layer(TraceLayer::new_for_http());
-
-    // Create V1 route handlers.
-    let v1_routes = initialise_v1_web_routing(&config);
-
-    // Create Debug route handlers.
-    let debug_routes = initialise_debug_routing();
 
     // Initialise our global web state that is shared across the project.
     // Global state uses A mutex to safely read and write to the state without any side effects.
     let global_state = SharedState::new(RwLock::new(MuxState {
+        environment: config.environment.clone(),
         claims: StandardClaims::default(),
     }));
 
     // * Initialise our v1 routes with our application level middleware, and shared state.
-    // Now we create our application middleware to layer around our v1 routes. This will also include other versioned routes.
-    let web_routes = v1_routes
+    // Create V1 route handlers.
+    let v1_routes = initialise_v1_web_routing(&config)
         .layer(
             // We use ServiceBuilder as this means that the order of middleware is from top to bottom.
             ServiceBuilder::new()
@@ -87,6 +81,18 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
         )
         .layer(Extension(global_state));
 
+    // Create Debug route handlers.
+    let debug_routes = initialise_debug_routing().layer(
+        ServiceBuilder::new()
+            // * Logging
+            .layer(middleware::from_fn_with_state(
+                LoggingContext {
+                    log: config.logger.clone(),
+                },
+                logging,
+            )),
+    );
+
     // Here we lastly create our new muxes, and then return to main in order to block the application
     // As stated before, this will be in a seperate thread so we can have multiple senders potentially
     // that gracefully shut down the application.
@@ -96,7 +102,7 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
         // Here we merge our versioned routes with our application middleware.
         // It is important to note that route layers (like middleware) need to wrap around routes, so the router
         // needs to contain the routes before the middleware.
-        router: tracer.clone().merge(web_routes),
+        router: tracer.clone().merge(v1_routes),
     });
 
     let debug_mux = server::new(server::Config {
