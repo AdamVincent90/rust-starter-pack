@@ -3,6 +3,7 @@
 This is where your rust codes sit, in terms of creating scalable, clean, and maintable code, src consists of four primary directories (layers).
 
 1. App
+
    App contains all your binaries and their configuration to start either, listening to requests, or executing jobs. An `App` can fall under three different types:
 
    1. Services - A service that listens or responds to requests.
