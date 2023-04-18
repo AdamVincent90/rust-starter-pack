@@ -4,10 +4,9 @@ use axum::{
     Json,
 };
 use rust_starter_pack::{
-    core::user::{user::UserCore, V1PostUser},
+    core::user::user::{UserCore, V1PostUser},
     domain::{system::error::error::RequestError, web::state::state::SharedState},
 };
-
 use std::sync::Arc;
 use validator::Validate;
 

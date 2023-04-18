@@ -1,6 +1,7 @@
 use super::auth::StandardClaims;
-use crate::core::user::stores::user_db::user_db::UserStore;
+use crate::lib::database::database;
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
+use sqlx::{PgPool, Row};
 use std::{
     env, fs,
     io::Read,
@@ -12,8 +13,8 @@ use std::{
 pub async fn encode_token(
     user_id: i32,
     key_id: String,
-    store: UserStore,
     signing_method: Algorithm,
+    db: PgPool,
 ) -> Result<String, axum::http::StatusCode> {
     // Load the correct encoding key based on the encoding algorithm provided.
     let (mut header, key) = match load_encoding_key(&key_id, signing_method) {
@@ -29,8 +30,17 @@ pub async fn encode_token(
     let expires_at = issued_at + Duration::from_secs(15 * 60).as_secs();
 
     // Fetch the user from the database with the given user id to store in the claims.
-    let user = match store.query_user_by_id(user_id).await {
-        Ok(user) => user,
+    let query = "
+        SELECT email, first_name, last_name, role
+        FROM users
+        WHERE id = $1";
+
+    // Provide the statement.
+    let statement = sqlx::query(query).bind(user_id);
+
+    // Fetch a single row of a user by using fn query_single_row()
+    let row = match database::query_single_row(&db, statement).await {
+        Ok(rows) => rows,
         Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
     };
 
@@ -39,10 +49,10 @@ pub async fn encode_token(
 
     // Create out new standard claims object.
     let standard_claims = StandardClaims {
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role,
+        email: row.get("email"),
+        first_name: row.get("first_name"),
+        last_name: row.get("last_name"),
+        role: row.get("role"),
         aud: String::from("rust-web-api"),
         iss: String::from("rust-web-api"),
         sub: String::from("10"), // we should get this from the user uuid in the db.

@@ -1,13 +1,21 @@
-use super::{
-    stores::user_db::{
-        user_db::{self, UserStore},
-        User,
-    },
-    V1PostUser,
+use super::stores::user_db::{
+    user_db::{self, UserStore},
+    User,
 };
 use crate::domain::{system::error::error::RequestError, web::state::state::MuxState};
 use crate::lib::logger::logger::Logger;
+use serde::Deserialize;
 use sqlx::PgPool;
+use validator::Validate;
+
+#[derive(Deserialize, Validate)]
+pub struct V1PostUser {
+    #[validate(email)]
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub role: String,
+}
 
 #[derive(Clone)]
 pub struct UserCore {

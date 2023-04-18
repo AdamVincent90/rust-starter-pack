@@ -1,10 +1,9 @@
-use crate::{core::user::stores::user_db::user_db::UserStore, domain::web::state::state::MuxState};
-
 use super::{decode, encode::encode_token};
-
+use crate::domain::web::state::state::MuxState;
 use hyper::StatusCode;
 use jsonwebtoken::{self, Algorithm};
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use tokio::sync::{RwLockReadGuard, RwLockWriteGuard};
 
 #[derive(Clone)]
@@ -13,7 +12,7 @@ pub struct Auth {
     pub enabled: bool,
     pub key_id: String,
     pub signing_method: Algorithm,
-    pub user_store: UserStore,
+    pub db: PgPool,
 }
 
 // The configuration when creating a new auth instance.
@@ -21,7 +20,7 @@ pub struct AuthConfig {
     pub enabled: bool,
     pub key_id: String,
     pub signing_method: Algorithm,
-    pub user_store: UserStore,
+    pub db: PgPool,
 }
 
 // The struct that contains all standard claims common within a JWT.
@@ -43,7 +42,7 @@ pub fn new(config: AuthConfig) -> Auth {
         enabled: config.enabled,
         key_id: config.key_id,
         signing_method: config.signing_method,
-        user_store: config.user_store,
+        db: config.db,
     }
 }
 
@@ -54,8 +53,8 @@ impl Auth {
         let data = match encode_token(
             user_id,
             self.key_id.clone(),
-            self.user_store.clone(),
             self.signing_method,
+            self.db.clone(),
         )
         .await
         {

@@ -1,5 +1,4 @@
 use rust_starter_pack::{
-    core::user::stores::user_db::user_db::UserStore,
     domain::system::auth::auth,
     lib::{database::database, logger::logger::Logger},
 };
@@ -32,10 +31,7 @@ pub async fn make_token(log: &Logger) -> Result<(), Box<dyn Error>> {
         enabled: true,
         key_id: String::from("72e8cca8-28a8-40e5-81bd-c1dbc7cfc5ee"),
         signing_method: jsonwebtoken::Algorithm::RS256,
-        user_store: UserStore {
-            logger: log.clone(),
-            db: db,
-        },
+        db: db,
     });
 
     let token = match auth.new_token(1).await {

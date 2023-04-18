@@ -1,10 +1,9 @@
-use std::{thread, time::Duration};
-
 use sqlx::{
     postgres::{self, PgArguments, PgRow, PgSslMode},
     query::Query,
     Connection, PgPool, Postgres,
 };
+use std::{thread, time::Duration};
 
 // TODO - make a wrapper around functions for transactions.
 // TODO - tidy up, quite a lot of code re-use here.

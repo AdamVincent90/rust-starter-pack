@@ -3,7 +3,6 @@ mod mux;
 
 use crate::config::Conf;
 use mux::mux as axum_mux;
-use rust_starter_pack::core::user::stores::user_db;
 use rust_starter_pack::domain::system::auth::auth::AuthConfig;
 use rust_starter_pack::lib::logger::logger;
 use rust_starter_pack::{domain::system::auth::auth, lib::database::database};
@@ -133,7 +132,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         enabled: default_config.auth.enabled,
         key_id: default_config.auth.key_id,
         signing_method: jsonwebtoken::Algorithm::RS256,
-        user_store: user_db::user_db::new_store(logger.clone(), db.clone()),
+        db: db.clone(),
     };
 
     let auth = auth::new(auth_config);

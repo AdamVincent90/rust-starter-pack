@@ -1,5 +1,5 @@
 use super::User;
-use crate::core::user::V1PostUser;
+use crate::core::user::user::V1PostUser;
 use crate::lib::database;
 use crate::lib::logger::logger::Logger;
 use sqlx::error::Error;
