@@ -15,17 +15,17 @@ This is where your rust codes sit, in terms of creating scalable, clean, and mai
 ---
 
 2. Core
-   Core contains all your self contained modules that are directly called by your app level binaries in order to fulfil or complete a business task. For example, creating a user, updating a user, viewing a user, would all fall under a self-contained core module. Core modules should also contain sub-modules such as a store or client that helps fulfil the business task.
+   contains all your self contained modules that are directly called by your app level binaries in order to fulfil or complete a business task. For example, creating a user, updating a user, viewing a user, would all fall under a self-contained core module. Core modules should also contain sub-modules such as a store or client that helps fulfil the business task.
 
 ---
 
 3. Domain
-   Domain contains the logic and business domain level modules (modules that are specifically targetted for this project). Modules such as auth, middleware, validation, error handling are good examples of modules that fall in this category Logic and code that is specifically targetted towards your project.
+   contains the logic and business domain level modules (modules that are specifically targetted for this project). Modules such as auth, middleware, validation, error handling are good examples of modules that fall in this category Logic and code that is specifically targetted towards your project.
 
 ---
 
 4. Lib
-   Lib, as the name suggests is where you store all your custom or third party libraries, these have no relevance to your business, but aim to be important tools that your project requires, regardless of Application level service/worker, and business logic.
+   as the name suggests is where you store all your custom or third party libraries, these have no relevance to your business, but aim to be important tools that your project requires, regardless of Application level service/worker, and business logic.
 
 ---
 
