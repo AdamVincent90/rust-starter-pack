@@ -10,7 +10,7 @@ use rust_starter_pack::domain::web::middleware::error::{error, ErrorContext};
 use rust_starter_pack::domain::web::middleware::logging::{logging, LoggingContext};
 use rust_starter_pack::domain::web::state::state::{MuxState, SharedState};
 use rust_starter_pack::lib::logger::logger;
-use rust_starter_pack::lib::server::server::{self, Axum};
+use rust_starter_pack::lib::web::server::{self, Axum};
 use sqlx::{postgres, PgPool};
 use std::sync::Arc;
 use tokio::sync::RwLock;

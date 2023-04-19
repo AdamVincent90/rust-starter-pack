@@ -23,6 +23,7 @@ pub mod domain {
 // Your lib modules here.
 pub mod lib {
     pub mod database;
+    pub mod grpc;
     pub mod logger;
-    pub mod server;
+    pub mod web;
 }

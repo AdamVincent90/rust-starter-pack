@@ -1,7 +1,7 @@
 use axum::{extract::State, response::IntoResponse, Json};
 use rust_starter_pack::{
     domain::system::error::error::SystemError,
-    lib::{database::database, server::server::liveness_check},
+    lib::{database::database, web::server::liveness_check},
 };
 use sqlx::PgPool;
 use std::sync::Arc;

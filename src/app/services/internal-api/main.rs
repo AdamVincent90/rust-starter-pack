@@ -1,8 +1,6 @@
 mod config;
-mod mux;
 
 use crate::config::Conf;
-use mux::mux as axum_mux;
 use rust_starter_pack::domain::system::auth::auth::AuthConfig;
 use rust_starter_pack::lib::logger::logger;
 use rust_starter_pack::{domain::system::auth::auth, lib::database::database};
@@ -19,7 +17,7 @@ use tokio::sync::oneshot;
 #[derive(Serialize)]
 pub struct AppConfig {
     pub app: config::AppSettings,
-    pub web: config::WebSettings,
+    pub web: config::GrpcSettings,
     pub db: config::DatabaseSettings,
     pub auth: config::AuthSettings,
 }
@@ -31,14 +29,14 @@ async fn main() {
 
     // Logger configuration to allow this application to define our custom logger.
     let logger_config = logger::Config {
-        name: String::from("external-api"),
+        name: String::from("INTERNAL-API"),
         max_log_level: log::LevelFilter::Debug,
     };
 
     // Logger configuration to allow this application to create our custom logger.
     let log = logger::new_logger(logger_config);
 
-    log.info_w("STARTING EXTERNAL SERVICE", Some("RUST WEB API MAIN"));
+    log.info_w("STARTING INTERNAL SERVICE", Some("INTERNAL API MAIN"));
 
     // We now begin the start up function in order to bundle our modules, and setup
     // our services ready to listen to events. We bubble any errors up during our start up
@@ -51,7 +49,7 @@ async fn main() {
                 err.to_string()
             )
             .as_str(),
-            Some("EXTERNAL API MAIN"),
+            Some("INTERNAL API MAIN"),
         );
 
         // Shut down process to attempt graceful shutdown of our application.
@@ -63,7 +61,7 @@ async fn main() {
                     err.to_string()
                 )
                 .as_str(),
-                Some("EXTERNAL API MAIN"),
+                Some("INTERNAL API MAIN"),
             );
             std::process::exit(1);
         }
@@ -84,11 +82,9 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
             environment: String::from("development"),
         }
         .load_from_env(&logger, "")?, // And then we can override from env if needed.
-        web: config::WebSettings {
+        web: config::GrpcSettings {
             address: String::from("0.0.0.0"),
             port: 80,
-            debug_address: String::from("0.0.0.0"),
-            debug_port: 4080,
         }
         .load_from_env(&logger, "WEB")?,
         db: config::DatabaseSettings {
@@ -189,59 +185,26 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     });
 
     // Finally, we can set up our web and debug server, we also create a onetime channel for graceful shutdowns.
-    let (web_send, web_recv) = oneshot::channel();
-    let (debug_send, debug_recv) = oneshot::channel();
+    // TODO here we comment out the grpc channel until we correctly send it.
+    // let (web_send, web_recv) = oneshot::channel();
 
-    let handler_config = axum_mux::MuxConfig {
-        environment: default_config.app.environment,
-        web_address: default_config.web.address,
-        web_port: default_config.web.port,
-        debug_address: default_config.web.debug_address,
-        debug_port: default_config.web.debug_port,
-        logger: logger,
-        db: db,
-        auth: auth,
-    };
-
-    // Finally, we create our new app, that passes in all the relevant configurations from start up.
+    // Finally, we create our new internal app, that passes in all the relevant configurations from start up.
     // Ownership is transferred to new_rust_app.
-    let (web_server, debug_server) = axum_mux::new_mux(handler_config)?;
+
+    // TODO here we provide the grpc server config.
 
     // Once we run the server, this will now be ran in a seperate thread, as above, the channel we send will notifiy the below
     // select statement.
-    web_server.run_sever(web_send)?;
 
-    // This will also contain a seperate debug server, serving on a different port and ofcourse thread.
-    debug_server.run_sever(debug_send)?;
+    // TODO and here we run the server and put listen to the channel signal
+    // web_server.run_sever(web_send)?;
 
-    logger.info_w("axum servers loaded", Some("External API Start Up"));
+    logger.info_w("axum servers loaded", Some("Internal API Start Up"));
 
     // This is where we will block the main thread until one of these signals is received back. Once a signal has been sent
     // From either, our packages, or from sigint, we then attempt to gracefully shutdown the application, if an error occurs
     // from then, we will attempt to shutdown the program ungracefully, and then a solution to stop these should be implemented.
     tokio::select! {
-            val = web_recv => {
-                logger.info_w("signal received from web server, starting graceful shutdown", Some("Rust Web API Start Up"));
-                match val {
-                    Ok(_) => {
-                        return Ok(());
-                    },
-                    Err(err) => {
-                        return Err(Box::new(err));
-                    }
-                };
-            },
-            val = debug_recv => {
-                logger.info_w("signal received from debug server, starting graceful shutdown", Some("Rust Web API Start Up"));
-                match val {
-                    Ok(_) => {
-                        return Ok(());
-                    },
-                    Err(err) => {
-                        return Err(Box::new(err));
-                    }
-                };
-            },
             val = signal_receive => {
               logger.info_w("signal received from sigint, starting graceful shutdown", Some("Rust Web API Start Up"));
                 match val {
@@ -265,7 +228,7 @@ fn shut_down(logger: &logger::Logger, err: Box<dyn std::error::Error>) -> Result
             err.to_string()
         )
         .as_str(),
-        Some("External API Shut Down"),
+        Some("Internal API Shut Down"),
     );
 
     // We currently just return OK. But this is where we will make sure to stop threads, workers
