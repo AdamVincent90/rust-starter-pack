@@ -4,7 +4,7 @@
 FROM rust:latest
 
 # Set the application directory
-WORKDIR /rust-web-api
+WORKDIR /external-api
 
 # Install cargo-watch
 RUN cargo install cargo-watch

@@ -10,10 +10,10 @@ authors = ["Adam Vincent"]
 # ==============================================================================
 # This is where we register our binaries for each service, worker, or tool you create.
 
-# cargo run --bin rust-web-api
+# cargo run --bin external-api
 [[bin]]
-name = "rust-web-api"
-path = "src/app/services/rust-web-api/main.rs"
+name = "external-api"
+path = "src/app/services/external-api/main.rs"
 
 # cargo run --bin lumber
 [[bin]]

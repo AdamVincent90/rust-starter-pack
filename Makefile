@@ -13,8 +13,8 @@ init:
 # by your binary name (these are defined within your cargo.toml file)
 
 # Run web api locally (Check envs)
-rust-web-api:
-	RUST_LOG=debug cargo run --bin rust-web-api
+external-api:
+	RUST_LOG=debug cargo run --bin external-api
 
 # Create a new RSA256 keypair
 .PHONY: rsa-keypair

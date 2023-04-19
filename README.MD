@@ -8,6 +8,16 @@ Although this project takes lots of inspiration from Ardan Labs Ultimate Service
 
 The Theory for Ardan Labs Ultimate Service is strongly applied to this project, that helps make this starter kit robust. Though language may have difference in opinion, and syntax, the theory is agnostic, which is what makes programming in different languages fun!
 
+### Service
+
+Although this starterpack will come with some tools, pre-made libraries, and will already be a good kit for non service related projects. This project will come with two example services (ready to be modified, or built on), either for them to be used together, or seperately. These are:
+
+1. External API - A standard rest API powered by Axum, with middleware, error handling, auth, validation, database, state, and grpc client support. The external API service acts as the "front facing" service where users make requests and then receive a response.
+
+2. Internal API - A backend to backend API service that uses GRPC Tonic, this will also support middleware, error handling and validation, database etc. This Internal API is more catered towards receiving requests and returning responses to another internal API.
+
+With how this project is built, The core modules within `core` can be used in an agnostic way, regardless of API implementation used. Core functions will also come with grpc client support, with the aim that it can be code genned using lumber.
+
 #### Quick Start
 
 Prequisites require that you have `rustc` and `cargo` installed on your machine, as well as `docker`.

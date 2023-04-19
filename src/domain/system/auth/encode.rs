@@ -59,8 +59,8 @@ pub async fn encode_token(
         first_name: row.get("first_name"),
         last_name: row.get("last_name"),
         role: row.get("role"),
-        aud: String::from("rust-web-api"),
-        iss: String::from("rust-web-api"),
+        aud: String::from("external-api"),
+        iss: String::from("external-api"),
         sub: String::from("10"), // we should get this from the user uuid in the db.
         iat: issued_at,
         exp: expires_at,

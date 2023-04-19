@@ -10,45 +10,52 @@ services:
   postgres-migrate:
     image: arigaio/atlas:0.8.1
     entrypoint: /app/wait4x
-    command: [
-      "postgresql", "postgres://postgres:example@postgres:5432/postgres?sslmode=disable", 
-      "--", 
-      "/atlas", "migrate", "apply", 
-      "--dir", "file://migrations", 
-      "--url", "postgres://postgres:example@postgres:5432/postgres?sslmode=disable",
-      "--tx-mode", "all",
-      "--allow-dirty"
-    ]
+    command:
+      [
+        "postgresql",
+        "postgres://postgres:example@postgres:5432/postgres?sslmode=disable",
+        "--",
+        "/atlas",
+        "migrate",
+        "apply",
+        "--dir",
+        "file://migrations",
+        "--url",
+        "postgres://postgres:example@postgres:5432/postgres?sslmode=disable",
+        "--tx-mode",
+        "all",
+        "--allow-dirty",
+      ]
     working_dir: /app
     volumes:
       - ./utils/wait4x:/app/wait4x
       - ../migrations:/app/migrations
-  rust-web-api:
+  external-api:
     build:
       context: ../../
       dockerfile: scaffold/docker/development.dockerfile
-    command: sh -c 'cargo watch -x "run --bin rust-web-api"'
+    command: sh -c 'cargo watch -x "run --bin external-api"'
     environment:
       RUST_LOG: debug
       RUST_BACKTRACE: 1
-      VERSION: '${VERSION}'
-      ENVIRONMENT: '${ENVIRONMENT}'
-      WEB_ADDRESS: '${WEB_ADDRESS}'
-      WEB_PORT: '${WEB_PORT}'
-      WEB_DEBUG_ADDRESS: '${WEB_DEBUG_ADDRESS}'
-      WEB_DEBUG_PORT: '${WEB_DEBUG_PORT}'
-      DB_HOST: '${DB_HOST}'
-      DB_PORT: '${DB_PORT}'
-      DB_USERNAME: '${DB_USERNAME}'
-      DB_PASSWORD: '${DB_PASSWORD}'
-      DB_SCHEMA: '${DB_SCHEMA}'
-      AUTH_ENABLED: '${AUTH_ENABLED}'
-      AUTH_KEY_ID: '${AUTH_KEY_ID}'
-      AUTH_PUBLIC_KEY: '${AUTH_PUBLIC_KEY}'
+      VERSION: "${VERSION}"
+      ENVIRONMENT: "${ENVIRONMENT}"
+      WEB_ADDRESS: "${WEB_ADDRESS}"
+      WEB_PORT: "${WEB_PORT}"
+      WEB_DEBUG_ADDRESS: "${WEB_DEBUG_ADDRESS}"
+      WEB_DEBUG_PORT: "${WEB_DEBUG_PORT}"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT}"
+      DB_USERNAME: "${DB_USERNAME}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_SCHEMA: "${DB_SCHEMA}"
+      AUTH_ENABLED: "${AUTH_ENABLED}"
+      AUTH_KEY_ID: "${AUTH_KEY_ID}"
+      AUTH_PUBLIC_KEY: "${AUTH_PUBLIC_KEY}"
     ports:
       - 8123:80
       - 8128:4080
     volumes:
-      - ../../.:/rust-web-api
+      - ../../.:/external-api
       - ../../stash/.cargo/registry:/usr/local/cargo/registry
       - ../../stash/.target:/root/target

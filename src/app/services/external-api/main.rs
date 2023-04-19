@@ -31,7 +31,7 @@ async fn main() {
 
     // Logger configuration to allow this application to define our custom logger.
     let logger_config = logger::Config {
-        name: String::from("RUST-WEB-API"),
+        name: String::from("external-api"),
         max_log_level: log::LevelFilter::Debug,
     };
 
