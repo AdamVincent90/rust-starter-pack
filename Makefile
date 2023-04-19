@@ -1,8 +1,16 @@
-# Binary commands contain the cargo functionality to run your binaries using the --bin target followed
-# by your binary name (these are defined within your cargo.toml file)
+# ==============================================================================
+# Install dependencies
+init:
+	brew install protobuf
+	brew install ariga/tap/atlas
+	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+	cargo check
 
 # ==============================================================================
 # Binary Commands
+
+# Binary commands contain the cargo functionality to run your binaries using the --bin target followed
+# by your binary name (these are defined within your cargo.toml file)
 
 # Run web api locally (Check envs)
 rust-web-api:

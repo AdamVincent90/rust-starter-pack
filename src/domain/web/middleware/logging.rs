@@ -1,4 +1,4 @@
-use crate::{domain::system::error::error::RequestError, lib::logger::logger::Logger};
+use crate::{domain::system::error::error::SystemError, lib::logger::logger::Logger};
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse};
 
 // LoggingContext contains all the state required to succefully log a request.
@@ -11,7 +11,7 @@ pub async fn logging<B>(
     State(context): State<LoggingContext>,
     request: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     // Pre Handler Logic
 
     let request_message = format!(

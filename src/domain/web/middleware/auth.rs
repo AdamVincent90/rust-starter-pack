@@ -1,5 +1,5 @@
 use crate::domain::{
-    system::{auth::auth::Auth, error::error::RequestError},
+    system::{auth::auth::Auth, error::error::SystemError},
     web::state::state::SharedState,
 };
 use axum::{extract::State, http::Request, middleware::Next, response::IntoResponse, Extension};
@@ -15,7 +15,7 @@ pub async fn authenticate<B>(
     State(context): State<AuthContext>,
     request: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     // Pre Handler Logic
 
     // Lock our shared state with write access to update claims to our state on succesful
@@ -26,7 +26,7 @@ pub async fn authenticate<B>(
         let token = match request.headers().get(axum::http::header::AUTHORIZATION) {
             Some(token) => token,
             None => {
-                return Err(RequestError::new(
+                return Err(SystemError::new(
                     axum::http::StatusCode::FORBIDDEN,
                     "no authorisation header provided",
                 ));
@@ -36,7 +36,7 @@ pub async fn authenticate<B>(
         let token = match token.to_str().ok() {
             Some(token) => token,
             None => {
-                return Err(RequestError::new(
+                return Err(SystemError::new(
                     axum::http::StatusCode::FORBIDDEN,
                     "no authorisation header provided",
                 ));
@@ -46,17 +46,14 @@ pub async fn authenticate<B>(
         let parts = token.split_whitespace().collect::<Vec<&str>>();
 
         if parts.len() != 2 {
-            return Err(RequestError::new(
+            return Err(SystemError::new(
                 axum::http::StatusCode::FORBIDDEN,
                 "no valid authorisation header provided",
             ));
         }
 
         if let Err(err) = context.auth.authenticate(parts[1].to_string(), &mut state) {
-            return Err(RequestError::new(
-                axum::http::StatusCode::FORBIDDEN,
-                format!("You are not authenticated : {}", err.as_str()),
-            ));
+            return Err(err);
         }
     }
 
@@ -80,17 +77,14 @@ pub async fn authorise<B>(
     State(context): State<AuthContext>,
     request: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     // Pre Handler Logic
 
     let state = state.read().await;
 
     if context.auth.enabled {
         if let Err(err) = context.auth.authorise(&state, roles) {
-            return Err(RequestError::new(
-                axum::http::StatusCode::UNAUTHORIZED,
-                format!("You are not authorised : {}", err.as_str()),
-            ));
+            return Err(err);
         }
     }
 

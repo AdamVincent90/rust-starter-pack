@@ -1,5 +1,6 @@
 use super::auth::StandardClaims;
-use crate::lib::database::database;
+use crate::{domain::system::error::error::SystemError, lib::database::database};
+use axum::http::StatusCode;
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use sqlx::{PgPool, Row};
 use std::{
@@ -15,7 +16,7 @@ pub async fn encode_token(
     key_id: String,
     signing_method: Algorithm,
     db: PgPool,
-) -> Result<String, axum::http::StatusCode> {
+) -> Result<String, SystemError> {
     // Load the correct encoding key based on the encoding algorithm provided.
     let (mut header, key) = match load_encoding_key(&key_id, signing_method) {
         Ok((header, key)) => (header, key),
@@ -41,7 +42,12 @@ pub async fn encode_token(
     // Fetch a single row of a user by using fn query_single_row()
     let row = match database::query_single_row(&db, statement).await {
         Ok(rows) => rows,
-        Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+        Err(err) => {
+            return Err(SystemError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("could not locate user in database : {}", err.to_string()),
+            ))
+        }
     };
 
     // Allow the header to contain the key id.
@@ -63,7 +69,15 @@ pub async fn encode_token(
     // We then run the encode function to create a new jwt using our private key.
     let new_token = match jsonwebtoken::encode(&header, &standard_claims, &key) {
         Ok(new_token) => new_token,
-        Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+        Err(err) => {
+            return Err(SystemError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!(
+                    "failed to encode new access token during encode : {}",
+                    err.to_string()
+                ),
+            ))
+        }
     };
 
     Ok(new_token)
@@ -73,7 +87,7 @@ pub async fn encode_token(
 fn load_encoding_key(
     key_id: &str,
     signing_method: Algorithm,
-) -> Result<(Header, EncodingKey), hyper::StatusCode> {
+) -> Result<(Header, EncodingKey), SystemError> {
     // Based on the signing method, we load a different key for our project.
     let (header, key) = match signing_method {
         Algorithm::HS256 => {
@@ -89,14 +103,22 @@ fn load_encoding_key(
             // We get the absolute path.
             let abs_path = PathBuf::from(match env::current_dir() {
                 Ok(abs_path) => abs_path,
-                Err(_) => {
-                    return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+                Err(err) => {
+                    return Err(SystemError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("could not locate absolute path : {}", err.to_string()),
+                    ));
                 }
             });
 
             let abs_path = match abs_path.to_str() {
                 Some(abs_path) => abs_path,
-                None => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+                None => {
+                    return Err(SystemError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "could not match path, found none",
+                    ))
+                }
             };
 
             // Use our private key based on the incoming key id.
@@ -106,26 +128,50 @@ fn load_encoding_key(
             let key_path = format!("{}/scaffold/keys/{}", abs_path, private_key_name);
             let mut key_file = match fs::File::open(key_path) {
                 Ok(key_file) => key_file,
-                Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+                Err(err) => {
+                    return Err(SystemError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!(
+                            "key location by key id does not exist : {}",
+                            err.to_string()
+                        ),
+                    ))
+                }
             };
 
             // We create a buffer for our string to buffer into bytes.
             let mut buf = String::new();
             match key_file.read_to_string(&mut buf) {
                 Ok(buf) => buf,
-                Err(_) => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+                Err(err) => {
+                    return Err(SystemError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("could not read from buffer : {}", err.to_string()),
+                    ))
+                }
             };
 
             // We then load the encoding key using the correct functionality based on signing method.
             let key = match EncodingKey::from_rsa_pem(buf.as_bytes()) {
                 Ok(key) => key,
-                Err(_) => {
-                    return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+                Err(err) => {
+                    return Err(SystemError::new(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!(
+                            "could not create token with found encoding key : {}",
+                            err.to_string()
+                        ),
+                    ));
                 }
             };
             (alg, key)
         }
-        _ => return Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+        _ => {
+            return Err(SystemError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid signing key method",
+            ))
+        }
     };
 
     Ok((header, key))

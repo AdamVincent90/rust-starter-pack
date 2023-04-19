@@ -1,4 +1,4 @@
-use crate::{domain::system::error::error::RequestError, lib::database};
+use crate::{domain::system::error::error::SystemError, lib::database};
 use axum::http::header;
 use axum::response::IntoResponse;
 use axum::{extract::State, http::Request, middleware::Next};
@@ -15,7 +15,7 @@ pub async fn audit<B>(
     State(context): State<AuditContext>,
     request: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     // Pre Handler Logic
 
     // Extract request headers
@@ -63,7 +63,7 @@ pub async fn audit<B>(
 
     // Insert a new user record into the database using the mutate_statement()
     if let Err(err) = database::database::mutate_statement(&context.db, statement).await {
-        return Err(RequestError::new(
+        return Err(SystemError::new(
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             err.to_string(),
         ));

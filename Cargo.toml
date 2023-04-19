@@ -18,16 +18,16 @@ path = "src/app/services/rust-web-api/main.rs"
 # cargo run --bin lumber
 [[bin]]
 name = "lumber"
-path = "src/app/jobs/lumber/main.rs"
+path = "src/app/tools/lumber/main.rs"
 
 [[bin]]
 name = "ssl"
-path = "src/app/jobs/ssl/main.rs"
+path = "src/app/tools/ssl/main.rs"
 
 # # cargo run --bin scheduled-worker
 [[bin]]
 name = "scheduled-worker"
-path = "src/app/workers/scheduled/main.rs"
+path = "src/app/jobs/scheduled/main.rs"
 
 
 # ==============================================================================

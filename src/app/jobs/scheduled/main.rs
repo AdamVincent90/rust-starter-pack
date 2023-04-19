@@ -4,5 +4,5 @@
 // To establish web service activity.
 
 fn main() {
-    println!("this will be an entry point for scheduled workers");
+    println!("this will be an entry point for scheduled jobs");
 }

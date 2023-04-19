@@ -38,7 +38,7 @@ pub async fn make_token(log: &Logger) -> Result<(), Box<dyn Error>> {
         Ok(token) => token,
         Err(err) => {
             log.error_w(
-                format!("error making local token : {}", err.as_str()).as_str(),
+                format!("error making local token : {}", err.message).as_str(),
                 Some("SSL Make Token"),
             );
             std::process::exit(1);

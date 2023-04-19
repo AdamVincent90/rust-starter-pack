@@ -1,5 +1,5 @@
 use super::{decode, encode::encode_token};
-use crate::domain::web::state::state::MuxState;
+use crate::domain::{system::error::error::SystemError, web::state::state::MuxState};
 use hyper::StatusCode;
 use jsonwebtoken::{self, Algorithm};
 use serde::{Deserialize, Serialize};
@@ -49,7 +49,7 @@ pub fn new(config: AuthConfig) -> Auth {
 impl Auth {
     // Creates a new JWT for the given user id (will be uuid). Used either to manually create a token
     // Or to return a new token on successful login.
-    pub async fn new_token(&self, user_id: i32) -> Result<String, StatusCode> {
+    pub async fn new_token(&self, user_id: i32) -> Result<String, SystemError> {
         let data = match encode_token(
             user_id,
             self.key_id.clone(),
@@ -70,7 +70,7 @@ impl Auth {
         &self,
         token: String,
         mutex: &mut RwLockWriteGuard<MuxState>,
-    ) -> Result<(), StatusCode> {
+    ) -> Result<(), SystemError> {
         let data = match decode::validate_token(token, &self.key_id, self.signing_method) {
             Ok(data) => data,
             Err(err) => return Err(err),
@@ -87,7 +87,7 @@ impl Auth {
         &self,
         mutex: &RwLockReadGuard<MuxState>,
         roles: Option<Vec<String>>,
-    ) -> Result<(), StatusCode> {
+    ) -> Result<(), SystemError> {
         // Very Basic for now.
 
         let list = match roles {
@@ -99,7 +99,10 @@ impl Auth {
         };
 
         if !list.contains(&mutex.claims.role) {
-            return Err(StatusCode::UNAUTHORIZED);
+            return Err(SystemError::new(
+                StatusCode::UNAUTHORIZED,
+                "you are not authorised for this resource",
+            ));
         }
 
         Ok(())

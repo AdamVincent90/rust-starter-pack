@@ -8,9 +8,9 @@ This is where your rust codes sit, in terms of creating scalable, clean, and mai
 
    1. Services - A service that listens or responds to requests.
 
-   2. Tools - A job that when runs, performs an operation that automates tasks for the developer.
+   2. Tools - A tool that when runs, performs an operation that automates tasks for the developer.
 
-   3. Workers - A worker is another tool that instead performs an operation that solves a business related task, these workers can be ad-hoc, or indeed scheduled.
+   3. Jobs - A job is another tool that instead performs an operation that solves a business related task, these jobs can be ad-hoc, or indeed scheduled.
 
 ---
 

@@ -5,7 +5,7 @@ use axum::{
 };
 use rust_starter_pack::{
     core::user::user::{UserCore, V1PostUser},
-    domain::{system::error::error::RequestError, web::state::state::SharedState},
+    domain::{system::error::error::SystemError, web::state::state::SharedState},
 };
 use std::sync::Arc;
 use validator::Validate;
@@ -29,7 +29,7 @@ pub struct UserContext {
 pub async fn v1_get_users(
     Extension(state): Extension<SharedState>,
     State(context): State<Arc<UserContext>>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     let state = &state.read().await;
 
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
@@ -48,7 +48,7 @@ pub async fn v1_get_user_by_id(
     Extension(state): Extension<SharedState>,
     State(context): State<Arc<UserContext>>,
     Path(id): Path<i32>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     let state = &state.read().await;
     // Once validated, or doing any logic involving the request, we send to our core entrypoint function.
     let result = match context.user_core.get_by_id(&state, id).await {
@@ -66,11 +66,11 @@ pub async fn v1_post_user(
     Extension(state): Extension<SharedState>,
     State(context): State<Arc<UserContext>>,
     Json(user): Json<V1PostUser>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     let state = &state.read().await;
     // Before sending off to core logic, for request bodies, we should validate it.
     if let Err(err) = user.validate() {
-        return Err(RequestError::new(
+        return Err(SystemError::new(
             axum::http::StatusCode::BAD_REQUEST,
             err.to_string(),
         ));

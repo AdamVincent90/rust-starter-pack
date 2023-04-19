@@ -1,6 +1,6 @@
 use axum::{extract::State, response::IntoResponse, Json};
 use rust_starter_pack::{
-    domain::system::error::error::RequestError,
+    domain::system::error::error::SystemError,
     lib::{database::database, server::server::liveness_check},
 };
 use sqlx::PgPool;
@@ -16,9 +16,9 @@ pub struct DebugContext {
 
 pub async fn check_database_status(
     State(context): State<Arc<DebugContext>>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     if let Err(err) = database::readiness_check(&context.db, 10).await {
-        return Err(RequestError::new(
+        return Err(SystemError::new(
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             err.to_string(),
         ));
@@ -29,9 +29,9 @@ pub async fn check_database_status(
 
 pub async fn check_web_server_status(
     State(context): State<Arc<DebugContext>>,
-) -> Result<impl IntoResponse, RequestError> {
+) -> Result<impl IntoResponse, SystemError> {
     if let Err(err) = liveness_check(context.web_address.clone(), context.web_port, 10).await {
-        return Err(RequestError::new(
+        return Err(SystemError::new(
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             err.to_string(),
         ));
