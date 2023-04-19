@@ -1,6 +1,7 @@
-use super::versions::version_one::users::{self, UserContext};
+use super::handlers::debug::debug::{self, DebugContext};
+use super::handlers::v1::users::{self, UserContext};
 use axum::routing::{get, post};
-use axum::{middleware, Extension, Json, Router};
+use axum::{middleware, Extension, Router};
 use rust_starter_pack::core::user::user;
 use rust_starter_pack::domain::system::auth::auth::{self, StandardClaims};
 use rust_starter_pack::domain::web::middleware::audit::{audit, AuditContext};
@@ -10,7 +11,7 @@ use rust_starter_pack::domain::web::middleware::logging::{logging, LoggingContex
 use rust_starter_pack::domain::web::state::state::{MuxState, SharedState};
 use rust_starter_pack::lib::logger::logger;
 use rust_starter_pack::lib::server::server::{self, Axum};
-use sqlx::postgres;
+use sqlx::{postgres, PgPool};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower::ServiceBuilder;
@@ -75,23 +76,13 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
                 ))
                 // * Auditing
                 .layer(middleware::from_fn_with_state(
-                    AuditContext { db: config.db },
+                    AuditContext {
+                        db: config.db.clone(),
+                    },
                     audit,
                 )),
         )
         .layer(Extension(global_state));
-
-    // Create Debug route handlers.
-    let debug_routes = initialise_debug_routing().layer(
-        ServiceBuilder::new()
-            // * Logging
-            .layer(middleware::from_fn_with_state(
-                LoggingContext {
-                    log: config.logger.clone(),
-                },
-                logging,
-            )),
-    );
 
     // Here we lastly create our new muxes, and then return to main in order to block the application
     // As stated before, this will be in a seperate thread so we can have multiple senders potentially
@@ -105,6 +96,18 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
         router: tracer.clone().merge(v1_routes),
     });
 
+    // Create Debug route handlers.
+    let debug_routes = initialise_debug_routing(config.db.clone()).layer(
+        ServiceBuilder::new()
+            // * Logging
+            .layer(middleware::from_fn_with_state(
+                LoggingContext {
+                    log: config.logger.clone(),
+                },
+                logging,
+            )),
+    );
+
     let debug_mux = server::new(server::Config {
         web_address: config.debug_address.clone(),
         port: config.debug_port,
@@ -117,16 +120,19 @@ pub fn new_mux(config: MuxConfig) -> Result<(Axum, Axum), axum::Error> {
 // fn initialise_debug_routing creates our debug routes, for now, this just contains a root path that pings itself.
 // This initial route will help in understanding if the debug service is experiencing any down time.
 // But this service can also provide liveness, and readiness checks for our main web server.
-fn initialise_debug_routing() -> axum::Router {
-    let debug_router = axum::Router::new();
-    let debug_router = debug_router // We provide a base route to ping.
-        .route(
-            "/",
-            get(|| async {
-                let message = "ping successful";
-                Json(message)
-            }),
-        );
+fn initialise_debug_routing(db: PgPool) -> axum::Router {
+    let debug_context = DebugContext {
+        version: String::from("v1"),
+        db: db,
+        web_address: String::from("http://host.docker.internal"),
+        web_port: 8128,
+    };
+
+    let debug_router = axum::Router::new() // We provide a base route to ping.
+        .route("/debug/web", get(debug::check_web_server_status))
+        .route("/debug/database", get(debug::check_database_status))
+        .with_state(Arc::new(debug_context));
+
     debug_router
 }
 

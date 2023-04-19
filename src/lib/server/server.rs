@@ -64,37 +64,40 @@ impl Axum {
 
         Ok(())
     }
+}
 
-    // async fn liveness_check() does a ping to the server to validate is liveness.
-    pub async fn liveness_check(&self, max_attempts: u8) -> Result<(), Box<dyn Error>> {
-        // We use hyper as the client to send requests for now.
-        let client = hyper::client::Client::new();
+// async fn liveness_check() does a ping to the server to validate is liveness.
+pub async fn liveness_check(
+    address: String,
+    port: u16,
+    max_attempts: u8,
+) -> Result<(), Box<dyn Error>> {
+    // We use hyper as the client to send requests for now.
+    let client = hyper::client::Client::new();
 
-        for i in 1..=max_attempts {
-            // Merge host and port.
-            let full_address = match Uri::from_str(
-                format!("{}:{}", self.web_address, self.port.to_string()).as_str(),
-            ) {
-                Ok(full_address) => full_address,
-                Err(err) => return Err(Box::new(err)),
-            };
+    for i in 1..=max_attempts {
+        // Merge host and port.
+        let full_address = match Uri::from_str(format!("{}:{}", address, port.to_string()).as_str())
+        {
+            Ok(full_address) => full_address,
+            Err(err) => return Err(Box::new(err)),
+        };
 
-            let req = client.get(full_address);
+        let req = client.get(full_address);
 
-            // Based on the number of attempts provided, we keep pinging the server until this limit is reached
-            // Once it has, we return an error.
-            match req.await {
-                Ok(_) => {
-                    break;
+        // Based on the number of attempts provided, we keep pinging the server until this limit is reached
+        // Once it has, we return an error.
+        match req.await {
+            Ok(_) => {
+                break;
+            }
+            Err(err) => {
+                if i == max_attempts {
+                    return Err(Box::new(err));
                 }
-                Err(err) => {
-                    if i == max_attempts {
-                        return Err(Box::new(err));
-                    }
-                }
-            };
-        }
-
-        Ok(())
+            }
+        };
     }
+
+    Ok(())
 }

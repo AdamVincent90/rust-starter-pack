@@ -1,5 +1,6 @@
 pub mod mux;
 
-pub mod versions {
-    pub mod version_one;
+pub mod handlers {
+    pub mod debug;
+    pub mod v1;
 }

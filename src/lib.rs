@@ -9,7 +9,6 @@ pub mod core {
 
 // Your domain modules here.
 pub mod domain {
-
     pub mod system {
         pub mod auth;
         pub mod error;

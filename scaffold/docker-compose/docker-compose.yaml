@@ -21,7 +21,7 @@ services:
     ]
     working_dir: /app
     volumes:
-      - ./tools/wait4x:/app/wait4x
+      - ./utils/wait4x:/app/wait4x
       - ../migrations:/app/migrations
   rust-web-api:
     build:
