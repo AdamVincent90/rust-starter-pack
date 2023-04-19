@@ -9,8 +9,8 @@ use std::{env, path::PathBuf};
 
 handlebars_helper!(upper: |str: String| str[0..1].to_uppercase() + &str[1..]);
 
-pub fn create_store(log: &Logger, command: &str, name: &str) -> Result<(), Box<dyn Error>> {
-    let message = format!("processing {} with name {}_db", command, name);
+pub fn create_store(log: &Logger, _command: &str, name: &str) -> Result<(), Box<dyn Error>> {
+    let message = format!("processing {} store with name {}_db", name, name);
     log.info_w(&message, Some("Lumber Create Store"));
 
     // Create a handlebars registry to use templates.
