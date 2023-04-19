@@ -1,7 +1,7 @@
 use std::io::Error;
 
 use rust_starter_pack::lib::logger::logger;
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 // Every main.rs executable, in most cases, should have a config for the app, these configs
 // aim to provide the app context to where or what they are performing business logic to, or for.
@@ -11,14 +11,14 @@ use serde::{de::DeserializeOwned, Deserialize};
 // Note you can provide prefixs in main.rs, so you property names dont require underscores.
 
 // We derive Deserialize to allow env vars to map to this struct.
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct AppSettings {
     pub version: String,
     pub environment: String,
 }
 
 // We derive Deserialize to allow env vars to map to this struct.
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct WebSettings {
     pub address: String,
     pub port: u16,
@@ -27,7 +27,7 @@ pub struct WebSettings {
 }
 
 // We derive Deserialize to allow env vars to map to this struct.
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct DatabaseSettings {
     pub host: String,
     pub port: u16,
@@ -36,7 +36,7 @@ pub struct DatabaseSettings {
     pub schema: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct AuthSettings {
     pub enabled: bool,
     pub key_id: String,

@@ -14,7 +14,7 @@ init:
 
 # Run web api locally (Check envs)
 rust-web-api:
-	cargo run --bin rust-web-api
+	RUST_LOG=debug cargo run --bin rust-web-api
 
 # Create a new RSA256 keypair
 .PHONY: rsa-keypair

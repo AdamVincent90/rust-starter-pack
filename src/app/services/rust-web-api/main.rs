@@ -6,6 +6,7 @@ use mux::mux as axum_mux;
 use rust_starter_pack::domain::system::auth::auth::AuthConfig;
 use rust_starter_pack::lib::logger::logger;
 use rust_starter_pack::{domain::system::auth::auth, lib::database::database};
+use serde::Serialize;
 use signal_hook::consts::SIGTERM;
 use signal_hook::{consts::SIGINT, iterator::Signals};
 use std::io::Error;
@@ -15,6 +16,7 @@ use tokio::sync::oneshot;
 // Defaults of these can also be provided when initialising the struct in fn start_up()
 // All of your custom configurations should be applied in config.rs, derive Serializable, and
 // Impl Conf in order to allow .env mappings and defaults.
+#[derive(Serialize)]
 pub struct AppConfig {
     pub app: config::AppSettings,
     pub web: config::WebSettings,
@@ -104,6 +106,22 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         }
         .load_from_env(&logger, "AUTH")?,
     };
+
+    // -----------------------------------------------------------
+    // Log default configuration
+    match serde_json::to_string(&default_config) {
+        Ok(json) => {
+            logger.info_w(json.as_str(), Some("Rust API startup"));
+        }
+        Err(err) => logger.warn_w(
+            format!(
+                "could not serialise default config, skipping.. : {}",
+                err.to_string()
+            )
+            .as_str(),
+            Some("Rust API startup"),
+        ),
+    }
 
     // -----------------------------------------------------------
     // Custom postgres configuration, and initialsation.

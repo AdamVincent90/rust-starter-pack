@@ -31,11 +31,20 @@ services:
     environment:
       RUST_LOG: debug
       RUST_BACKTRACE: 1
+      VERSION: '${VERSION}'
+      ENVIRONMENT: '${ENVIRONMENT}'
+      WEB_ADDRESS: '${WEB_ADDRESS}'
+      WEB_PORT: '${WEB_PORT}'
+      WEB_DEBUG_ADDRESS: '${WEB_DEBUG_ADDRESS}'
+      WEB_DEBUG_PORT: '${WEB_DEBUG_PORT}'
       DB_HOST: '${DB_HOST}'
       DB_PORT: '${DB_PORT}'
       DB_USERNAME: '${DB_USERNAME}'
       DB_PASSWORD: '${DB_PASSWORD}'
       DB_SCHEMA: '${DB_SCHEMA}'
+      AUTH_ENABLED: '${AUTH_ENABLED}'
+      AUTH_KEY_ID: '${AUTH_KEY_ID}'
+      AUTH_PUBLIC_KEY: '${AUTH_PUBLIC_KEY}'
     ports:
       - 8123:80
       - 8128:4080
