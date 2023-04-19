@@ -18,7 +18,7 @@ Although this starterpack will come with some tools, pre-made libraries, and wil
 
 With how this project is built, The core modules within `core` can be used in an agnostic way, regardless of API implementation used. Core functions will also come with grpc client support, with the aim that it can be code genned using lumber.
 
-#### Quick Start
+#### Quick Start (mac)
 
 Prequisites require that you have `docker` installed on your machine. Make init should install the deps required, including rust.
 
