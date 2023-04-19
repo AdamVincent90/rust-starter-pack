@@ -20,11 +20,12 @@ With how this project is built, The core modules within `core` can be used in an
 
 #### Quick Start
 
-Prequisites require that you have `rustc` and `cargo` installed on your machine, as well as `docker`.
+Prequisites require that you have `docker` installed on your machine. Make init should install the deps required, including rust.
 
 1. Clone the repo
-2. Cargo Install
-3. run `make run-dev`
+2. Open Repo
+3. run `make init`
+4. run `make docker-up`
 
 This should build a docker network consisting of your rust container running a debug, and web server. A postgres Container for storing your data, and a postgres migrate container that will perform database migrations. The initial migrations will create a `users` table with one user record.
 
