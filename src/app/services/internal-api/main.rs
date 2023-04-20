@@ -1,6 +1,8 @@
 mod config;
+mod rpc;
 
 use crate::config::Conf;
+use crate::rpc::rpc::new_rpc;
 use rust_starter_pack::domain::system::auth::auth::AuthConfig;
 use rust_starter_pack::lib::logger::logger;
 use rust_starter_pack::{domain::system::auth::auth, lib::database::database};
@@ -185,26 +187,43 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     });
 
     // Finally, we can set up our web and debug server, we also create a onetime channel for graceful shutdowns.
-    // TODO here we comment out the grpc channel until we correctly send it.
-    // let (web_send, web_recv) = oneshot::channel();
+    let (web_send, web_recv) = oneshot::channel();
 
     // Finally, we create our new internal app, that passes in all the relevant configurations from start up.
     // Ownership is transferred to new_rust_app.
 
-    // TODO here we provide the grpc server config.
+    let rpc_config = rpc::rpc::RpcConfig {
+        environment: default_config.app.environment,
+        web_address: default_config.web.address,
+        port: default_config.web.port,
+        auth: auth,
+        db: db,
+        log: &logger,
+    };
+
+    let tonic = new_rpc(rpc_config);
 
     // Once we run the server, this will now be ran in a seperate thread, as above, the channel we send will notifiy the below
     // select statement.
+    tonic.run_server(web_send)?;
 
-    // TODO and here we run the server and put listen to the channel signal
-    // web_server.run_sever(web_send)?;
-
-    logger.info_w("axum servers loaded", Some("Internal API Start Up"));
+    logger.info_w("grpc tonic server loaded", Some("Internal API Start Up"));
 
     // This is where we will block the main thread until one of these signals is received back. Once a signal has been sent
     // From either, our packages, or from sigint, we then attempt to gracefully shutdown the application, if an error occurs
     // from then, we will attempt to shutdown the program ungracefully, and then a solution to stop these should be implemented.
     tokio::select! {
+          val = web_recv => {
+                logger.info_w("signal received from grpc server, starting graceful shutdown", Some("Rust Web API Start Up"));
+                match val {
+                    Ok(_) => {
+                        return Ok(());
+                    },
+                    Err(err) => {
+                        return Err(Box::new(err));
+                    }
+                };
+            },
             val = signal_receive => {
               logger.info_w("signal received from sigint, starting graceful shutdown", Some("Rust Web API Start Up"));
                 match val {
