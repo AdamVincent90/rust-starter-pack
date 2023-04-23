@@ -86,7 +86,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         .load_from_env(&logger, "")?, // And then we can override from env if needed.
         web: config::GrpcSettings {
             address: String::from("0.0.0.0"),
-            port: 80,
+            port: 50051,
         }
         .load_from_env(&logger, "WEB")?,
         db: config::DatabaseSettings {
@@ -187,7 +187,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     });
 
     // Finally, we can set up our web and debug server, we also create a onetime channel for graceful shutdowns.
-    let (web_send, web_recv) = oneshot::channel();
+    let (grpc_send, grpc_recv) = oneshot::channel();
 
     // Finally, we create our new internal app, that passes in all the relevant configurations from start up.
     // Ownership is transferred to new_rust_app.
@@ -205,7 +205,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
 
     // Once we run the server, this will now be ran in a seperate thread, as above, the channel we send will notifiy the below
     // select statement.
-    tonic.run_server(web_send)?;
+    tonic.run_server(grpc_send)?;
 
     logger.info_w("grpc tonic server loaded", Some("Internal API Start Up"));
 
@@ -213,7 +213,7 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
     // From either, our packages, or from sigint, we then attempt to gracefully shutdown the application, if an error occurs
     // from then, we will attempt to shutdown the program ungracefully, and then a solution to stop these should be implemented.
     tokio::select! {
-          val = web_recv => {
+          val = grpc_recv => {
                 logger.info_w("signal received from grpc server, starting graceful shutdown", Some("Rust Web API Start Up"));
                 match val {
                     Ok(_) => {

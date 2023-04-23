@@ -33,7 +33,7 @@ services:
   external-api:
     build:
       context: ../../
-      dockerfile: scaffold/docker/development.dockerfile
+      dockerfile: scaffold/docker/exterbal-dev.dockerfile
     command: sh -c 'cargo watch -x "run --bin external-api"'
     environment:
       RUST_LOG: debug
@@ -57,5 +57,33 @@ services:
       - 8128:4080
     volumes:
       - ../../.:/external-api
+      - ../../stash/.cargo/registry:/usr/local/cargo/registry
+      - ../../stash/.target:/root/target
+  internal-api:
+    build:
+      context: ../../
+      dockerfile: scaffold/docker/internal-dev.dockerfile
+    command: sh -c 'cargo watch -x "run --bin internal-api"'
+    environment:
+      RUST_LOG: debug
+      RUST_BACKTRACE: 1
+      VERSION: "${VERSION}"
+      ENVIRONMENT: "${ENVIRONMENT}"
+      WEB_ADDRESS: "${WEB_ADDRESS}"
+      WEB_PORT: "${WEB_PORT}"
+      WEB_DEBUG_ADDRESS: "${WEB_DEBUG_ADDRESS}"
+      WEB_DEBUG_PORT: "${WEB_DEBUG_PORT}"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT}"
+      DB_USERNAME: "${DB_USERNAME}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_SCHEMA: "${DB_SCHEMA}"
+      AUTH_ENABLED: "${AUTH_ENABLED}"
+      AUTH_KEY_ID: "${AUTH_KEY_ID}"
+      AUTH_PUBLIC_KEY: "${AUTH_PUBLIC_KEY}"
+    ports:
+      - 50051:50051
+    volumes:
+      - ../../.:/internal-api
       - ../../stash/.cargo/registry:/usr/local/cargo/registry
       - ../../stash/.target:/root/target

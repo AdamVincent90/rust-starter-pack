@@ -23,7 +23,11 @@ impl User for UserContext {
     ) -> Result<Response<GetUserResponse>, Status> {
         println!("Got a request: {:?}", request);
 
-        let _response = match self.user_core.get_all(&MuxState::default()).await {
+        let _response = match self
+            .user_core
+            .get_by_id(&MuxState::default(), request.get_ref().user_id)
+            .await
+        {
             Ok(response) => response,
             Err(err) => return Err(Status::aborted(err.message)),
         };
