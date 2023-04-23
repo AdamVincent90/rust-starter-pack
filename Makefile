@@ -16,6 +16,10 @@ init:
 external-api:
 	RUST_LOG=debug cargo run --bin external-api
 
+# Run grpc api locally (Check envs)
+internal-api:
+	RUST_LOG=debug cargo run --bin internal-api
+
 # Create a new RSA256 keypair
 .PHONY: rsa-keypair
 rsa-keypair:
