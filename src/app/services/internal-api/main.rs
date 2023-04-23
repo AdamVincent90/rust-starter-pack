@@ -90,8 +90,8 @@ async fn start_up(logger: &logger::Logger) -> Result<(), Box<dyn std::error::Err
         }
         .load_from_env(&logger, "WEB")?,
         db: config::DatabaseSettings {
-            host: String::from("postgres"),
-            port: 5432,
+            host: String::from("localhost"),
+            port: 5439,
             username: String::from("postgres"),
             password: String::from("example"),
             schema: String::from("postgres"),
