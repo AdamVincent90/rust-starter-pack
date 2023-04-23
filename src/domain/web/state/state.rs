@@ -9,6 +9,7 @@ use tokio::sync::RwLock;
 // to our state. A very good use-case of this is our standard claims, that contains user information.
 pub type SharedState = Arc<RwLock<MuxState>>;
 
+#[derive(Default)]
 // Any data that would be advantagous to contain for shared readable, and writable state.
 pub struct MuxState {
     pub environment: String,

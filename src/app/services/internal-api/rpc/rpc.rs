@@ -1,34 +1,14 @@
 use rust_starter_pack::{
+    core::user::user,
     domain::system::auth::auth::Auth,
     lib::{grpc::server::Tonic, logger::logger::Logger},
 };
 use sqlx::PgPool;
-use tonic::{transport::server::Server, Request, Response, Status};
-use user::user_server::{User, UserServer};
-use user::{GetUserRequest, GetUserResponse};
+use tonic::transport::{server::Router, Server};
 
-pub mod user {
-    tonic::include_proto!("user");
-}
+use crate::rpc::servers::user::UserContext;
 
-#[derive(Debug, Default)]
-pub struct MyUser {}
-
-#[tonic::async_trait]
-impl User for MyUser {
-    async fn get_user(
-        &self,
-        request: Request<GetUserRequest>,
-    ) -> Result<Response<GetUserResponse>, Status> {
-        println!("Got a request: {:?}", request);
-
-        let reply = user::GetUserResponse {
-            name: format!("Hello {}!", request.into_inner().user_id).into(),
-        };
-
-        Ok(Response::new(reply))
-    }
-}
+use super::servers::user::user::user_server::UserServer;
 
 pub struct RpcConfig<'a> {
     pub environment: String,
@@ -40,7 +20,7 @@ pub struct RpcConfig<'a> {
 }
 
 pub fn new_rpc(config: RpcConfig) -> Tonic {
-    let router = Server::builder().add_service(UserServer::new(MyUser::default()));
+    let router = load_rpc_services(&config);
 
     Tonic {
         web_address: config.web_address,
@@ -49,6 +29,14 @@ pub fn new_rpc(config: RpcConfig) -> Tonic {
     }
 }
 
-pub fn load_rpc_services() {
-    todo!()
+pub fn load_rpc_services(config: &RpcConfig) -> Router {
+    // Create user handler that will acts as the context for users routes.
+    let user_context = UserContext {
+        version: String::from("v1"),
+        user_core: user::new_core(&config.log, &config.db),
+    };
+
+    let router = Server::builder().add_service(UserServer::new(user_context));
+
+    router
 }
